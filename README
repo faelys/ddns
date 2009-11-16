@@ -87,3 +87,32 @@ whatever it wants with the zone. Another example is that since the client
 knows its address, it knows when it changes, so it can send updates to the
 server only when needed, which allows for a heavier update mechanism, e.g.
 SSH'ing to the seerver and running an ad-hoc script there.
+
+
+Implementation
+--------------
+
+The messages contain:
+
+ * a timestamp, to prevent replay attacks and to drop late packets for an
+   old IP,
+ * the client hostname, used to know which record should be update and to
+   get the matching secret,
+ * the client IPv4 address, which is set to 0.0.0.0 in "unsafe" mode,
+ * a HMAC to sign the rest of the message with the client's secret.
+
+These messages are sent using UDP, because the idea is to send them quite
+often (e.g. every few minutes) but it does not matter that much when a few
+of them are lost or are not in time. This allow a relatively fast reaction
+from the server while still being light in ressource usage.
+
+The actual binary implementation of the message is:
+
+ * first the timestamp as a number of seconds since Epoch (UNIX time)
+   written as a decimal integer, followed by a zero byte,
+ * then the client hostname, followed by a zero byte,
+ * then four bytes of the address, in big endian (i.e. the IP would be
+   output using "%u.%u.%u.%u", addr[0], addr[1], addr[2], addr[3]),
+   followed by a zero byte,
+ * finally the 20 bytes of HMAC-SHA-1 of everything before, followed by
+   the tag "sha-1" (without ending zero byte).
