@@ -20,6 +20,7 @@
 #define DDNS_LOG_H
 
 #include "buffer.h"
+#include "message.h"
 
 #include <netdb.h>
 
@@ -51,6 +52,19 @@ log_c_send_short(const void *data, size_t datalen, size_t sent);
 
 void
 log_c_socket(void);
+
+
+
+/**************************
+ * MISC LOGGING FUNCTIONS *
+ **************************/
+
+void
+log_m_message(struct ddns_message *msg, const unsigned char *peer);
+
+void
+log_m_stat(const char *filename);
+
 
 #endif /* ndef DDNS_LOG_H */
 
