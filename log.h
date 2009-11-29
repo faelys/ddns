@@ -66,6 +66,54 @@ void
 log_m_stat(const char *filename);
 
 
+
+/****************************
+ * SERVER LOGGING FUNCTIONS *
+ ****************************/
+
+void
+log_s_bad_account_cmd(struct buf *cmd);
+
+void
+log_s_bad_cmd(struct buf *cmd);
+
+void
+log_s_bad_config(void);
+
+void
+log_s_bad_hmac(struct ddns_message *msg, unsigned char *real_hmac);
+
+void
+log_s_bind(const char *host, const char *port);
+
+void
+log_s_getaddrinfo(const char *host, const char *port, int errcode);
+
+void
+log_s_empty_config(const char *filename);
+
+void
+log_s_fd_error(void);
+
+void
+log_s_no_account(const char *name, size_t namelen);
+
+void
+log_s_no_config(void);
+
+void
+log_s_no_listen(const char *filename);
+
+void
+log_s_open_config(const char *filename);
+
+void
+log_s_recvfrom(void);
+
+void
+log_s_socket(const char *host, const char *port);
+
+
 #endif /* ndef DDNS_LOG_H */
 
 /* vim: set filetype=c: */
