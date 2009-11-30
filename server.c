@@ -39,9 +39,11 @@
 struct account {
 	struct buf	*name;
 	struct buf	*key;
+	int		 max_future;
+	int		 max_past;
 	struct {
 		unsigned allow_unsafe:1;
-	}		flags;
+	}		 flags;
 };
 
 
@@ -50,6 +52,7 @@ static void
 init_account(struct account *acc) {
 	acc->name = 0;
 	acc->key = 0;
+	acc->max_future = acc->max_past = -1;
 	acc->flags.allow_unsafe = 0; }
 
 
@@ -86,18 +89,40 @@ cmp_msg_to_acc(const void *a, const void *b) {
 			acc->name->data, acc->name->size); }
 
 
+/* mkinter • helper function for interval, returns -1 on invalid number */
+static int
+mkinter(struct buf *buf) {
+	size_t end = 0;
+	int ret;
+	ret = buftoi(buf, 0, &end);
+	if (end < buf->size || ret < 0) return -1;
+	return ret; }
+
+
 /* parse_account • fills a struct account according to a S-expression */
 static void
 parse_account(struct account *acc, struct sexp *sx) {
 	struct sexp *s, *t;
 	for (s = sx; s; s = s->next)
 		if (!s->list || !s->list->node) continue;
-		else if (!bufcmps(s->list->node, "name")) {
-			if (s->list->next)
-				bufset(&acc->name, s->list->next->node); }
 		else if (!bufcmps(s->list->node, "key")) {
 			if (s->list->next)
 				bufset(&acc->key, s->list->next->node); }
+		else if (!bufcmps(s->list->node, "interval")) {
+			if (s->list->next) {
+				acc->max_past = mkinter(s->list->next->node);
+				acc->max_future = s->list->next->next
+					? mkinter(s->list->next->next->node)
+					: acc->max_past; } }
+		else if (!bufcmps(s->list->node, "max-future")) {
+			if (s->list->next)
+				acc->max_future = mkinter(s->list->next->node);}
+		else if (!bufcmps(s->list->node, "max-past")) {
+			if (s->list->next)
+				acc->max_past = mkinter(s->list->next->node); }
+		else if (!bufcmps(s->list->node, "name")) {
+			if (s->list->next)
+				bufset(&acc->name, s->list->next->node); }
 		else if (!bufcmps(s->list->node, "flags")
 		|| !bufcmps(s->list->node, "flag")) {
 			for (t = s->list->next; t; t = t->next)
@@ -339,6 +364,13 @@ process_message(struct server_options *opt, struct raw_message *rmsg) {
 		msg.addr[1] = real_addr[1];
 		msg.addr[2] = real_addr[2];
 		msg.addr[3] = real_addr[3]; }
+
+	/* checking send time */
+	i = difftime(time(0), msg.time);
+	if ((acc->max_future > 0 && -i > acc->max_future)
+	||  (acc->max_past   > 0 &&  i > acc->max_past)) {
+		log_s_bad_time(&msg, i, acc->max_past, acc->max_future);
+		return; }
 
 	/* message dump */
 	log_m_message(&msg, real_addr); }

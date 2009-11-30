@@ -90,6 +90,9 @@ void
 log_s_bad_hmac(struct ddns_message *msg, unsigned char *real_hmac);
 
 void
+log_s_bad_time(struct ddns_message *msg, int dt, int past, int future);
+
+void
 log_s_bind(const char *host, const char *port);
 
 void

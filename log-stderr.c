@@ -135,6 +135,11 @@ log_s_bad_hmac(struct ddns_message *msg, unsigned char *real_hmac) {
 	fprintf(stderr, "HMAC mismatch\n"); }
 
 void
+log_s_bad_time(struct ddns_message *msg, int dt, int past, int future) {
+	fprintf(stderr, "Anachronic message %d vs %d,%d\n", dt, past, future);
+	log_m_message(msg, 0); }
+
+void
 log_s_bind(const char *host, const char *port) {
 	fprintf(stderr, "Unable to bind stocket to %s:%s: %s\n",
 		host ? host : "*", port ? port : "*", strerror(errno)); }
@@ -185,6 +190,6 @@ log_s_socket(const char *host, const char *port) {
 void
 log_s_unsafe_forbidden(struct ddns_message *msg, const unsigned char *peer) {
 	fprintf(stderr, "Rejecting unsafe message\n");
-	log_m_message(msg, peer); }
+log_m_message(msg, peer); }
 
 /* vim: set filetype=c: */
