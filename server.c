@@ -208,10 +208,17 @@ reload_options(struct server_options *opt) {
 		log_s_empty_config(opt->filename);
 		return 0; }
 
-	/* reading S-expression data */
+	/* preloading the new options */
 	init_server_options(&neo);
 	neo.filename = opt->filename;
 	neo.mtime = opt->mtime;
+	if (opt->fds.size) {
+		arr_grow(&neo.fds, opt->fds.size);
+		memcpy(neo.fds.base, opt->fds.base,
+				opt->fds.size * opt->fds.unit);
+		neo.fds.size = opt->fds.size; }
+
+	/* reading S-expression data */
 	for (s = sx; s; s = s->next)
 		if (!s->list || !s->list->node) continue;
 		else if (!bufcmps(s->list->node, "listen"))
@@ -233,6 +240,7 @@ reload_options(struct server_options *opt) {
 	if (!neo.fds.size) {
 		log_s_no_listen(opt->filename);
 		return 0; }
+	else log_s_listen_nb(neo.fds.size);
 
 	/* post-processing */
 	qsort(neo.accounts.base, neo.accounts.size, neo.accounts.unit,
@@ -252,6 +260,12 @@ reload_options(struct server_options *opt) {
  * MAIN LOOP *
  *************/
 
+/* raw_message • structure containing recieved data waiting to be processed */
+struct raw_message {
+	unsigned char		data[MAX_MSG_SIZE];
+	size_t			datalen;
+	struct sockaddr_in	peer; };
+
 /* terminated • flag set upon SIGTERM reception */
 static int terminated = 0;
 
@@ -262,13 +276,9 @@ sig_handler(int a) {
 	terminated = 1; }
 
 
-/* read_message • reads and processes a message from a fd */
+/* process_message • reads and processes a message from a fd */
 static void
-read_message(int fd, struct server_options *opt) {
-	unsigned char data[MAX_MSG_SIZE];
-	ssize_t ret;
-	struct sockaddr_in si_other;
-	socklen_t si_other_len = sizeof si_other;
+process_message(struct server_options *opt, struct raw_message *rmsg) {
 	struct ddns_message msg;
 	size_t msglen;
 	int i;
@@ -276,15 +286,8 @@ read_message(int fd, struct server_options *opt) {
 	struct account *acc;
 	unsigned char hmac[20];
 
-	/* reads the message from the fd */
-	ret = recvfrom(fd, data, sizeof data, MSG_DONTWAIT,
-				(struct sockaddr *)&si_other, &si_other_len);
-	if (ret < 0) {
-		log_s_recvfrom();
-		return; }
-
 	/* decoding message */
-	msglen = decode_message(&msg, data, ret);
+	msglen = decode_message(&msg, rmsg->data, rmsg->datalen);
 	if (!msglen) return;
 
 	/* looking for a matching account */
@@ -295,14 +298,14 @@ read_message(int fd, struct server_options *opt) {
 		return; }
 
 	/* checking hmac */
-	sha1_hmac(hmac, data, msglen, acc->key->data, acc->key->size);
+	sha1_hmac(hmac, rmsg->data, msglen, acc->key->data, acc->key->size);
 	for (i = 0; i < 20; i += 1) if (msg.hmac[i] != hmac[i]) break;
 	if (i < 20) {
 		log_s_bad_hmac(&msg, hmac);
 		return; }
 
 	/* message dump */
-	real_addr = (unsigned char *)&si_other.sin_addr.s_addr;
+	real_addr = (unsigned char *)&rmsg->peer.sin_addr.s_addr;
 	log_m_message(&msg, real_addr); }
 
 
@@ -313,6 +316,10 @@ main(int argc, char **argv) {
 	struct pollfd *pfd;
 	struct server_options opt;
 	struct sigaction sa;
+	struct array rmsgs;
+	struct raw_message *rmsg;
+	ssize_t sret;
+	socklen_t si_other_len;
 
 	/* arguments checks */
 	if (argc < 2) {
@@ -320,6 +327,7 @@ main(int argc, char **argv) {
 		return EXIT_FAILURE; }
 
 	/* variable initialization */
+	arr_init(&rmsgs, sizeof (struct raw_message));
 	init_server_options(&opt);
 	opt.filename = argv[1];
 	if (!reload_options(&opt)) {
@@ -335,13 +343,31 @@ main(int argc, char **argv) {
 	/* poll() loop */
 	while ((ret = poll(opt.fds.base, opt.fds.size, -1)) >= 0
 	&& !terminated) {
-		/* iterating over fd */
+		/* reading messages */
 		pfd = opt.fds.base;
 		for (i = 0; i < opt.fds.size; i += 1) {
-			if (pfd[i].revents & POLLIN)
-				read_message(pfd[i].fd, &opt);
 			if (pfd[i].revents & (POLLHUP | POLLERR))
-				log_s_fd_error();  } }
+				log_s_fd_error();
+			else if (pfd[i].revents & POLLIN) {
+				rmsg = arr_item(&rmsgs, arr_newitem(&rmsgs));
+				si_other_len = sizeof rmsg->peer;
+				sret = recvfrom(pfd[i].fd, rmsg->data,
+					sizeof rmsg->data, MSG_DONTWAIT,
+					(struct sockaddr *)&rmsg->peer,
+					&si_other_len);
+				if (ret < 0) {
+					log_s_recvfrom();
+					rmsgs.size -= 1; }
+				else rmsg->datalen = sret; } }
+
+		/* reloading configuration (if needed) */
+		reload_options(&opt);
+
+		/* processing messages */
+		rmsg = rmsgs.base;
+		for (i = 0; i < rmsgs.size; i += 1)
+			process_message(&opt, rmsg + i);
+		rmsgs.size = 0; }
 
 	free_server_options(&opt);
 	return EXIT_SUCCESS; }

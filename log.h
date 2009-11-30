@@ -96,6 +96,9 @@ void
 log_s_fd_error(void);
 
 void
+log_s_listen_nb(int nb);
+
+void
 log_s_no_account(const char *name, size_t namelen);
 
 void
