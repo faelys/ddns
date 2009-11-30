@@ -78,6 +78,10 @@ void
 log_s_account_up(struct buf *name, const unsigned char *addr);
 
 void
+log_s_addr_change(struct buf *name, const unsigned char *old_addr,
+					const unsigned char *new_addr);
+
+void
 log_s_addr_mismatch(struct ddns_message *msg, const unsigned char *peer);
 
 void

@@ -106,14 +106,24 @@ log_m_stat(const char *filename) {
 
 void
 log_s_account_down(struct buf *name, const unsigned char *last_addr) {
-	fprintf(stderr, "Account %.*s timeout\n",
-			(int)name->size, name->data); }
+	fprintf(stderr, "Account %.*s timeout (last seen at %u.%u.%u.%u)\n",
+		(int)name->size, name->data,
+		last_addr[0], last_addr[1], last_addr[2], last_addr[3]); }
 
 void
 log_s_account_up(struct buf *name, const unsigned char *addr) {
 	fprintf(stderr, "Account %.*s up (%u.%u.%u.%u)\n",
 			(int)name->size, name->data,
 			addr[0], addr[1], addr[2], addr[3]); }
+
+void
+log_s_addr_change(struct buf *name, const unsigned char *old_addr,
+					const unsigned char *new_addr) {
+	fprintf(stderr, "Accound %.*s changed address "
+			"from %u.%u.%u.%u to %u.%u.%u.%u\n",
+		(int)name->size, name->data,
+		old_addr[0], old_addr[1], old_addr[2], old_addr[3],
+		new_addr[0], new_addr[1], new_addr[2], new_addr[3]); }
 
 void
 log_s_addr_mismatch(struct ddns_message *msg, const unsigned char *peer) {

@@ -39,6 +39,7 @@
 struct account {
 	struct buf	*name;
 	struct buf	*key;
+	unsigned char	 last_addr[4];
 	time_t		 last_seen;
 	int		 max_future;
 	int		 max_past;
@@ -55,6 +56,8 @@ static void
 init_account(struct account *acc) {
 	acc->name = 0;
 	acc->key = 0;
+	acc->last_addr[0] = acc->last_addr[1] =
+		acc->last_addr[2] = acc->last_addr[3] = 0;
 	acc->last_seen = 0;
 	acc->max_future = acc->max_past =  acc->timeout = -1;
 	acc->flags.active = 0;
@@ -384,16 +387,27 @@ process_message(struct server_options *opt, struct raw_message *rmsg) {
 
 	/* --- The message is accepted --- */
 
+	/* updating last seen time */
+	acc->last_seen = now;
+
+	/* check for address change */
+	if (msg.addr[0] == acc->last_addr[0] && msg.addr[1] == acc->last_addr[1]
+	&& msg.addr[2] == acc->last_addr[2] && msg.addr[3] == acc->last_addr[3])
+		return;
+
 	/* marking the account as active */
 	if (!acc->flags.active) {
 		acc->flags.active = 1;
 		log_s_account_up(acc->name, msg.addr); }
+	else log_s_addr_change(acc->name, acc->last_addr, msg.addr);
 
-	/* updating last seen time */
-	acc->last_seen = now;
+	/* copying the new address */
+	acc->last_addr[0] = msg.addr[0];
+	acc->last_addr[1] = msg.addr[1];
+	acc->last_addr[2] = msg.addr[2];
+	acc->last_addr[3] = msg.addr[3];
 
-	/* message dump */
-	log_m_message(&msg, real_addr); }
+	/* TODO: actual DNS update */ }
 
 
 /* check_timeout • checks accounts for timeouts, returns the time before next*/
@@ -412,8 +426,11 @@ check_timeout(struct server_options *opt) {
 
 		/* checking time out */
 		if (acc[i].last_seen + acc[i].timeout <= now) {
+			log_s_account_down(acc[i].name, acc[i].last_addr);
 			acc[i].flags.active = 0;
-			log_s_account_down(acc[i].name, 0);
+			acc[i].last_addr[0] = acc[i].last_addr[1] = 
+				acc[i].last_addr[2] = acc[i].last_addr[3] = 0;
+			/* TODO: actual DNS update */
 			continue; }
 
 		/* computing next timeout */
