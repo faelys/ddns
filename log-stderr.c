@@ -105,9 +105,21 @@ log_m_stat(const char *filename) {
  ****************************/
 
 void
+log_s_addr_mismatch(struct ddns_message *msg, const unsigned char *peer) {
+	fprintf(stderr, "Address mismatch between peer %u.%u.%u.%u "
+			"and message %u.%u.%u.%u\n",
+		msg->addr[0], msg->addr[1], msg->addr[2], msg->addr[3],
+		peer[0], peer[1], peer[2], peer[3]); }
+
+void
 log_s_bad_account_cmd(struct buf *cmd) {
 	fprintf(stderr, "Unknown account option \"%.*s\"\n",
 						(int)cmd->size, cmd->data); }
+
+void
+log_s_bad_account_flag(struct buf *flag) {
+	fprintf(stderr, "Unknown account flag \"%.*s\"\n",
+						(int)flag->size, flag->data); }
 
 void
 log_s_bad_cmd(struct buf *cmd) {
@@ -169,5 +181,10 @@ void
 log_s_socket(const char *host, const char *port) {
 	fprintf(stderr, "Unable to create socket for %s:%s: %s\n",
 		host ? host : "*", port ? port : "*", strerror(errno)); }
+
+void
+log_s_unsafe_forbidden(struct ddns_message *msg, const unsigned char *peer) {
+	fprintf(stderr, "Rejecting unsafe message\n");
+	log_m_message(msg, peer); }
 
 /* vim: set filetype=c: */

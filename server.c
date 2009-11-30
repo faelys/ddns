@@ -39,6 +39,9 @@
 struct account {
 	struct buf	*name;
 	struct buf	*key;
+	struct {
+		unsigned allow_unsafe:1;
+	}		flags;
 };
 
 
@@ -46,7 +49,8 @@ struct account {
 static void
 init_account(struct account *acc) {
 	acc->name = 0;
-	acc->key = 0; }
+	acc->key = 0;
+	acc->flags.allow_unsafe = 0; }
 
 
 /* free_account • release of the struct account members */
@@ -85,7 +89,7 @@ cmp_msg_to_acc(const void *a, const void *b) {
 /* parse_account • fills a struct account according to a S-expression */
 static void
 parse_account(struct account *acc, struct sexp *sx) {
-	struct sexp *s;
+	struct sexp *s, *t;
 	for (s = sx; s; s = s->next)
 		if (!s->list || !s->list->node) continue;
 		else if (!bufcmps(s->list->node, "name")) {
@@ -94,6 +98,19 @@ parse_account(struct account *acc, struct sexp *sx) {
 		else if (!bufcmps(s->list->node, "key")) {
 			if (s->list->next)
 				bufset(&acc->key, s->list->next->node); }
+		else if (!bufcmps(s->list->node, "flags")
+		|| !bufcmps(s->list->node, "flag")) {
+			for (t = s->list->next; t; t = t->next)
+				if (!t->node) continue;
+				else if (!bufcmps(t->node, "allow-unsafe")
+				|| !bufcmps(t->node, "allow_unsafe"))
+					acc->flags.allow_unsafe = 1;
+				else if (!bufcmps(t->node, "forbid-unsafe")
+				|| !bufcmps(t->node, "forbid_unsafe")
+				|| !bufcmps(t->node, "no-unsafe")
+				|| !bufcmps(t->node, "no_unsafe"))
+					acc->flags.allow_unsafe = 0;
+				else log_s_bad_account_flag(t->node); }
 		else log_s_bad_account_cmd(s->list->node); }
 
 
@@ -304,8 +321,26 @@ process_message(struct server_options *opt, struct raw_message *rmsg) {
 		log_s_bad_hmac(&msg, hmac);
 		return; }
 
-	/* message dump */
+	/* checking peer address against message address */
 	real_addr = (unsigned char *)&rmsg->peer.sin_addr.s_addr;
+	if (real_addr[0] != msg.addr[0] || real_addr[1] != msg.addr[1]
+	||  real_addr[2] != msg.addr[2] || real_addr[3] != msg.addr[3]) {
+		/* reject message if message addr != 0.0.0.0 */
+		if (msg.addr[0] || msg.addr[1]
+		|| msg.addr[2] || msg.addr[3]) {
+			log_s_addr_mismatch(&msg, real_addr);
+			return; }
+		/* check whether unsafe mode is allowed for this account */
+		if (!acc->flags.allow_unsafe) {
+			log_s_unsafe_forbidden(&msg, real_addr);
+			return; }
+		/* unsafe mode allowed, copying peer address into msg */
+		msg.addr[0] = real_addr[0];
+		msg.addr[1] = real_addr[1];
+		msg.addr[2] = real_addr[2];
+		msg.addr[3] = real_addr[3]; }
+
+	/* message dump */
 	log_m_message(&msg, real_addr); }
 
 

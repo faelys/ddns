@@ -72,7 +72,13 @@ log_m_stat(const char *filename);
  ****************************/
 
 void
+log_s_addr_mismatch(struct ddns_message *msg, const unsigned char *peer);
+
+void
 log_s_bad_account_cmd(struct buf *cmd);
+
+void
+log_s_bad_account_flag(struct buf *flag);
 
 void
 log_s_bad_cmd(struct buf *cmd);
@@ -116,6 +122,8 @@ log_s_recvfrom(void);
 void
 log_s_socket(const char *host, const char *port);
 
+void
+log_s_unsafe_forbidden(struct ddns_message *msg, const unsigned char *peer);
 
 #endif /* ndef DDNS_LOG_H */
 
