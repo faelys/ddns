@@ -20,12 +20,19 @@ CFLAGS=-c -g -O3 -Wall -Werror
 LDFLAGS=-g -O3 -Wall -Werror
 CC=gcc
 
-all:		sha1-test
+all:		sha1-test client server
 
 .PHONY:		all clean
 
 
 # Main project links
+
+client:		client.o buffer.o array.o sexp.o sha1.o message.o log-stderr.o
+	$(CC) $(LDFLAGS) $(.ALLSRC) -o $(.TARGET)
+
+server:		server.o buffer.o array.o sexp.o sha1.o message.o log-stderr.o\
+		utils.o
+	$(CC) $(LDFLAGS) $(.ALLSRC) -o $(.TARGET)
 
 sha1-test:	sha1-test.o sha1.o
 	$(CC) $(LDFLAGS) $(.ALLSRC) -o $(.TARGET)
