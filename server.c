@@ -39,10 +39,13 @@
 struct account {
 	struct buf	*name;
 	struct buf	*key;
+	time_t		 last_seen;
 	int		 max_future;
 	int		 max_past;
+	int		 timeout;
 	struct {
 		unsigned allow_unsafe:1;
+		unsigned active:1;
 	}		 flags;
 };
 
@@ -52,7 +55,9 @@ static void
 init_account(struct account *acc) {
 	acc->name = 0;
 	acc->key = 0;
-	acc->max_future = acc->max_past = -1;
+	acc->last_seen = 0;
+	acc->max_future = acc->max_past =  acc->timeout = -1;
+	acc->flags.active = 0;
 	acc->flags.allow_unsafe = 0; }
 
 
@@ -123,6 +128,9 @@ parse_account(struct account *acc, struct sexp *sx) {
 		else if (!bufcmps(s->list->node, "name")) {
 			if (s->list->next)
 				bufset(&acc->name, s->list->next->node); }
+		else if (!bufcmps(s->list->node, "timeout")) {
+			if (s->list->next)
+				acc->timeout = mkinter(s->list->next->node);}
 		else if (!bufcmps(s->list->node, "flags")
 		|| !bufcmps(s->list->node, "flag")) {
 			for (t = s->list->next; t; t = t->next)
@@ -327,6 +335,7 @@ process_message(struct server_options *opt, struct raw_message *rmsg) {
 	unsigned char *real_addr;
 	struct account *acc;
 	unsigned char hmac[20];
+	time_t now;
 
 	/* decoding message */
 	msglen = decode_message(&msg, rmsg->data, rmsg->datalen);
@@ -366,20 +375,58 @@ process_message(struct server_options *opt, struct raw_message *rmsg) {
 		msg.addr[3] = real_addr[3]; }
 
 	/* checking send time */
-	i = difftime(time(0), msg.time);
+	now = time(0);
+	i = difftime(now, msg.time);
 	if ((acc->max_future > 0 && -i > acc->max_future)
 	||  (acc->max_past   > 0 &&  i > acc->max_past)) {
 		log_s_bad_time(&msg, i, acc->max_past, acc->max_future);
 		return; }
 
+	/* --- The message is accepted --- */
+
+	/* marking the account as active */
+	if (!acc->flags.active) {
+		acc->flags.active = 1;
+		log_s_account_up(acc->name, msg.addr); }
+
+	/* updating last seen time */
+	acc->last_seen = now;
+
 	/* message dump */
 	log_m_message(&msg, real_addr); }
+
+
+/* check_timeout • checks accounts for timeouts, returns the time before next*/
+static int
+check_timeout(struct server_options *opt) {
+	struct account *acc = opt->accounts.base;
+	time_t now = time(0);
+	int i, dt;
+	int ret = -1;
+
+	for (i = 0; i < opt->accounts.size; i += 1) {
+		/* skipping accounts that cannot time out */
+		if (!acc[i].flags.active
+		|| acc[i].timeout <= 0)
+			continue;
+
+		/* checking time out */
+		if (acc[i].last_seen + acc[i].timeout <= now) {
+			acc[i].flags.active = 0;
+			log_s_account_down(acc[i].name, 0);
+			continue; }
+
+		/* computing next timeout */
+		dt = (acc[i].last_seen + acc[i].timeout - now) * 1000;
+		if (ret < 0 || ret > dt) ret = dt; }
+
+	return ret; }
 
 
 /* main • main program loop */
 int
 main(int argc, char **argv) {
-	int ret, i;
+	int ret, i, timeout;
 	struct pollfd *pfd;
 	struct server_options opt;
 	struct sigaction sa;
@@ -408,7 +455,8 @@ main(int argc, char **argv) {
 	sigaction(SIGTERM, &sa, 0);
 
 	/* poll() loop */
-	while ((ret = poll(opt.fds.base, opt.fds.size, -1)) >= 0
+	timeout = -1;
+	while ((ret = poll(opt.fds.base, opt.fds.size, timeout)) >= 0
 	&& !terminated) {
 		/* reading messages */
 		pfd = opt.fds.base;
@@ -434,7 +482,10 @@ main(int argc, char **argv) {
 		rmsg = rmsgs.base;
 		for (i = 0; i < rmsgs.size; i += 1)
 			process_message(&opt, rmsg + i);
-		rmsgs.size = 0; }
+		rmsgs.size = 0;
+
+		/* checking account timeouts */
+		timeout = check_timeout(&opt); }
 
 	free_server_options(&opt);
 	return EXIT_SUCCESS; }

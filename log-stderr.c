@@ -105,6 +105,17 @@ log_m_stat(const char *filename) {
  ****************************/
 
 void
+log_s_account_down(struct buf *name, const unsigned char *last_addr) {
+	fprintf(stderr, "Account %.*s timeout\n",
+			(int)name->size, name->data); }
+
+void
+log_s_account_up(struct buf *name, const unsigned char *addr) {
+	fprintf(stderr, "Account %.*s up (%u.%u.%u.%u)\n",
+			(int)name->size, name->data,
+			addr[0], addr[1], addr[2], addr[3]); }
+
+void
 log_s_addr_mismatch(struct ddns_message *msg, const unsigned char *peer) {
 	fprintf(stderr, "Address mismatch between peer %u.%u.%u.%u "
 			"and message %u.%u.%u.%u\n",
@@ -190,6 +201,6 @@ log_s_socket(const char *host, const char *port) {
 void
 log_s_unsafe_forbidden(struct ddns_message *msg, const unsigned char *peer) {
 	fprintf(stderr, "Rejecting unsafe message\n");
-log_m_message(msg, peer); }
+	log_m_message(msg, peer); }
 
 /* vim: set filetype=c: */

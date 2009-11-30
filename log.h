@@ -72,6 +72,12 @@ log_m_stat(const char *filename);
  ****************************/
 
 void
+log_s_account_down(struct buf *name, const unsigned char *last_addr);
+
+void
+log_s_account_up(struct buf *name, const unsigned char *addr);
+
+void
 log_s_addr_mismatch(struct ddns_message *msg, const unsigned char *peer);
 
 void
