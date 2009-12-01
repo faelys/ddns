@@ -1,0 +1,19 @@
+client:
+  * self address discovering (for safe mode)
+  * better logging?
+
+examples:
+  * making and committing them
+
+log:
+  * syslog implementation
+
+message:
+  * logging encoding and decoding failures
+
+server:
+  * actual DNS update
+  * common options for all accounts
+
+README:
+  * explaining internals?
