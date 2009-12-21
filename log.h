@@ -33,7 +33,7 @@ void
 log_c_ambiguous_addr(const char *host, const char *port, struct addrinfo *ai);
 
 void
-log_c_bad_cmd(struct buf *cmd);
+log_c_bad_cmd(const char *cmd);
 
 void
 log_c_connect(const char *host, const char *port, struct addrinfo *ai);
@@ -72,26 +72,27 @@ log_m_stat(const char *filename);
  ****************************/
 
 void
-log_s_account_down(struct buf *name, const unsigned char *last_addr);
+log_s_account_down(const char *name, size_t nsize,
+					const unsigned char *last_addr);
 
 void
-log_s_account_up(struct buf *name, const unsigned char *addr);
+log_s_account_up(const char *name, size_t nsize, const unsigned char *addr);
 
 void
-log_s_addr_change(struct buf *name, const unsigned char *old_addr,
+log_s_addr_change(const char *name, size_t nsize, const unsigned char *old_addr,
 					const unsigned char *new_addr);
 
 void
 log_s_addr_mismatch(struct ddns_message *msg, const unsigned char *peer);
 
 void
-log_s_bad_account_cmd(struct buf *cmd);
+log_s_bad_account_cmd(const char *cmd);
 
 void
-log_s_bad_account_flag(struct buf *flag);
+log_s_bad_account_flag(const char *flag);
 
 void
-log_s_bad_cmd(struct buf *cmd);
+log_s_bad_cmd(char *cmd);
 
 void
 log_s_bad_config(void);

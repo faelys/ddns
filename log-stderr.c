@@ -37,9 +37,8 @@ log_c_ambiguous_addr(const char *host, const char *port, struct addrinfo *ai) {
 
 
 void
-log_c_bad_cmd(struct buf *cmd) {
-	fprintf(stderr, "Unknown client option \"%.*s\"\n",
-						(int)cmd->size, cmd->data); }
+log_c_bad_cmd(const char *cmd) {
+	fprintf(stderr, "Unknown client option \"%s\"\n", cmd); }
 
 
 void
@@ -60,11 +59,14 @@ log_c_no_options(void) { }
 
 void
 log_c_send_fail(const void *data, size_t datalen) {
+	(void)data;
+	(void)datalen;
 	fprintf(stderr, "Send failure of message: %s\n", strerror(errno)); }
 
 
 void
 log_c_send_short(const void *data, size_t datalen, size_t sent) {
+	(void)data;
 	fprintf(stderr, "Short send of message (%zu/%zu)\n", sent, datalen); }
 
 
@@ -105,23 +107,24 @@ log_m_stat(const char *filename) {
  ****************************/
 
 void
-log_s_account_down(struct buf *name, const unsigned char *last_addr) {
+log_s_account_down(const char *name, size_t nsize,
+					const unsigned char *last_addr) {
 	fprintf(stderr, "Account %.*s timeout (last seen at %u.%u.%u.%u)\n",
-		(int)name->size, name->data,
+		(int)nsize, name,
 		last_addr[0], last_addr[1], last_addr[2], last_addr[3]); }
 
 void
-log_s_account_up(struct buf *name, const unsigned char *addr) {
+log_s_account_up(const char *name, size_t nsize, const unsigned char *addr) {
 	fprintf(stderr, "Account %.*s up (%u.%u.%u.%u)\n",
-			(int)name->size, name->data,
+			(int)nsize, name,
 			addr[0], addr[1], addr[2], addr[3]); }
 
 void
-log_s_addr_change(struct buf *name, const unsigned char *old_addr,
+log_s_addr_change(const char *name, size_t nsize, const unsigned char *old_addr,
 					const unsigned char *new_addr) {
 	fprintf(stderr, "Accound %.*s changed address "
 			"from %u.%u.%u.%u to %u.%u.%u.%u\n",
-		(int)name->size, name->data,
+		(int)nsize, name,
 		old_addr[0], old_addr[1], old_addr[2], old_addr[3],
 		new_addr[0], new_addr[1], new_addr[2], new_addr[3]); }
 
@@ -133,19 +136,16 @@ log_s_addr_mismatch(struct ddns_message *msg, const unsigned char *peer) {
 		peer[0], peer[1], peer[2], peer[3]); }
 
 void
-log_s_bad_account_cmd(struct buf *cmd) {
-	fprintf(stderr, "Unknown account option \"%.*s\"\n",
-						(int)cmd->size, cmd->data); }
+log_s_bad_account_cmd(const char *cmd) {
+	fprintf(stderr, "Unknown account option \"%s\"\n", cmd); }
 
 void
-log_s_bad_account_flag(struct buf *flag) {
-	fprintf(stderr, "Unknown account flag \"%.*s\"\n",
-						(int)flag->size, flag->data); }
+log_s_bad_account_flag(const char *flag) {
+	fprintf(stderr, "Unknown account flag \"%s\"\n",flag); }
 
 void
-log_s_bad_cmd(struct buf *cmd) {
-	fprintf(stderr, "Unknown server option \"%.*s\"\n",
-						(int)cmd->size, cmd->data); }
+log_s_bad_cmd(char *cmd) {
+	fprintf(stderr, "Unknown server option \"%s\"\n", cmd); }
 
 void
 log_s_bad_config(void) {
@@ -153,6 +153,8 @@ log_s_bad_config(void) {
 
 void
 log_s_bad_hmac(struct ddns_message *msg, unsigned char *real_hmac) {
+	(void)msg;
+	(void)real_hmac;
 	fprintf(stderr, "HMAC mismatch\n"); }
 
 void

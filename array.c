@@ -216,7 +216,8 @@ parr_init(struct parray *arr) {
 int
 parr_insert(struct parray *parr, int nb, int n) {
 	char *src, *dst;
-	size_t len, i;
+	size_t len;
+	int i;
 	if (!parr || nb <= 0 || n < 0
 	|| !parr_grow(parr, parr->size + nb))
 		return 0;

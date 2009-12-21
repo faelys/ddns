@@ -17,9 +17,9 @@
  */
 
 #include "array.h"
+#include "csexp.h"
 #include "log.h"
 #include "message.h"
-#include "sexp.h"
 #include "sha1.h"
 #include "utils.h"
 
@@ -37,8 +37,10 @@
  *******************/
 
 struct account {
-	struct buf	*name;
-	struct buf	*key;
+	char		*name;
+	size_t		 nsize;
+	char		*key;
+	size_t		 ksize;
 	unsigned char	 last_addr[4];
 	time_t		 last_seen;
 	int		 max_future;
@@ -55,7 +57,9 @@ struct account {
 static void
 init_account(struct account *acc) {
 	acc->name = 0;
+	acc->nsize = 0;
 	acc->key = 0;
+	acc->ksize = 0;
 	acc->last_addr[0] = acc->last_addr[1] =
 		acc->last_addr[2] = acc->last_addr[3] = 0;
 	acc->last_seen = 0;
@@ -67,8 +71,8 @@ init_account(struct account *acc) {
 /* free_account • release of the struct account members */
 static void
 free_account(struct account *acc) {
-	bufrelease(acc->name);
-	bufrelease(acc->key); }
+	free(acc->name);
+	free(acc->key); }
 
 
 /* data_cmp • comparison function checking size first, then contents */
@@ -84,8 +88,8 @@ static int
 cmp_acc_to_acc(const void *a, const void *b) {
 	const struct account *acc1 = a;
 	const struct account *acc2 = b;
-	return data_cmp(acc1->name->data, acc1->name->size,
-			acc2->name->data, acc2->name->size); }
+	return data_cmp(acc1->name, acc1->nsize,
+			acc2->name, acc2->nsize); }
 
 
 /* cmp_msg_to_acc • comparison function for bsearch()ing the account from msg*/
@@ -94,60 +98,69 @@ cmp_msg_to_acc(const void *a, const void *b) {
 	const struct ddns_message *msg = a;
 	const struct account *acc = b;
 	return data_cmp(msg->name, msg->namelen,
-			acc->name->data, acc->name->size); }
+			acc->name, acc->nsize); }
 
 
 /* mkinter • helper function for interval, returns -1 on invalid number */
 static int
-mkinter(struct buf *buf) {
-	size_t end = 0;
-	int ret;
-	ret = buftoi(buf, 0, &end);
-	if (end < buf->size || ret < 0) return -1;
+mkinter(struct sx_node *node) {
+	char *end;
+	long ret;
+	if (!node || !SX_IS_ATOM(node)) return -1;
+	ret = strtol(node->data, &end, 10);
+	if (*end || ret < 0) return -1;
 	return ret; }
 
 
 /* parse_account • fills a struct account according to a S-expression */
 static void
-parse_account(struct account *acc, struct sexp *sx) {
-	struct sexp *s, *t;
+parse_account(struct account *acc, struct sx_node *sx) {
+	struct sx_node *s, *t, *arg;
+	const char *cmd;
+	void *neo;
 	for (s = sx; s; s = s->next)
-		if (!s->list || !s->list->node) continue;
-		else if (!bufcmps(s->list->node, "key")) {
-			if (s->list->next)
-				bufset(&acc->key, s->list->next->node); }
-		else if (!bufcmps(s->list->node, "interval")) {
-			if (s->list->next) {
-				acc->max_past = mkinter(s->list->next->node);
-				acc->max_future = s->list->next->next
-					? mkinter(s->list->next->next->node)
-					: acc->max_past; } }
-		else if (!bufcmps(s->list->node, "max-future")) {
-			if (s->list->next)
-				acc->max_future = mkinter(s->list->next->node);}
-		else if (!bufcmps(s->list->node, "max-past")) {
-			if (s->list->next)
-				acc->max_past = mkinter(s->list->next->node); }
-		else if (!bufcmps(s->list->node, "name")) {
-			if (s->list->next)
-				bufset(&acc->name, s->list->next->node); }
-		else if (!bufcmps(s->list->node, "timeout")) {
-			if (s->list->next)
-				acc->timeout = mkinter(s->list->next->node);}
-		else if (!bufcmps(s->list->node, "flags")
-		|| !bufcmps(s->list->node, "flag")) {
-			for (t = s->list->next; t; t = t->next)
-				if (!t->node) continue;
-				else if (!bufcmps(t->node, "allow-unsafe")
-				|| !bufcmps(t->node, "allow_unsafe"))
+		if (!SX_CHILD(s)
+		|| (cmd = SX_DATA(SX_CHILD(s))) == 0
+		|| (arg = SX_CHILD(s)->next) == 0)
+			continue;
+		else if (!strcmp(cmd, "key")) {
+			if (!SX_IS_ATOM(arg)) continue;
+			neo = realloc(acc->key, arg->size);
+			if (!neo) continue;
+			acc->key = neo;
+			acc->ksize = arg->size;
+			memcpy(acc->key, arg->data, arg->size); }
+		else if (!strcmp(cmd, "interval")) {
+			acc->max_past = mkinter(arg);
+			acc->max_future = arg->next ? mkinter(arg->next)
+						    : acc->max_past; }
+		else if (!strcmp(cmd, "max-future"))
+			acc->max_future = mkinter(arg);
+		else if (!strcmp(cmd, "max-past"))
+			acc->max_past = mkinter(arg);
+		else if (!strcmp(cmd, "name")) {
+			if (!SX_IS_ATOM(arg)) continue;
+			neo = realloc(acc->name, arg->size);
+			if (!neo) continue;
+			acc->name = neo;
+			acc->nsize = arg->size;
+			memcpy(acc->name, arg->data, arg->size); }
+		else if (!strcmp(cmd, "timeout"))
+			acc->timeout = mkinter(arg);
+		else if (!strcmp(cmd, "flags")
+		|| !strcmp(cmd, "flag")) {
+			for (t = arg; t; t = t->next)
+				if (!SX_IS_ATOM(t)) continue;
+				else if (!strcmp(t->data, "allow-unsafe")
+				|| !strcmp(t->data, "allow_unsafe"))
 					acc->flags.allow_unsafe = 1;
-				else if (!bufcmps(t->node, "forbid-unsafe")
-				|| !bufcmps(t->node, "forbid_unsafe")
-				|| !bufcmps(t->node, "no-unsafe")
-				|| !bufcmps(t->node, "no_unsafe"))
+				else if (!strcmp(t->data, "forbid-unsafe")
+				|| !strcmp(t->data, "forbid_unsafe")
+				|| !strcmp(t->data, "no-unsafe")
+				|| !strcmp(t->data, "no_unsafe"))
 					acc->flags.allow_unsafe = 0;
-				else log_s_bad_account_flag(t->node); }
-		else log_s_bad_account_cmd(s->list->node); }
+				else log_s_bad_account_flag(t->data); }
+		else log_s_bad_account_cmd(cmd); }
 
 
 
@@ -186,7 +199,7 @@ free_server_options(struct server_options *opt) {
 
 /* add_listen_fd • creates the described by the S-exp and adds it to poll_fds*/
 static void
-add_listen_fd(struct array *poll_fds, struct sexp *sx) {
+add_listen_fd(struct array *poll_fds, struct sx_node *sx) {
 	const char *port = 0;
 	const char *iface = 0;
 	int fd, ret;
@@ -195,12 +208,8 @@ add_listen_fd(struct array *poll_fds, struct sexp *sx) {
 	struct addrinfo *res, *rp;
 
 	/* argument decoding */
-	if (sx && sx->node) {
-		bufnullterm(sx->node);
-		port = sx->node->data; }
-	if (sx && sx->next && sx->next->node) {
-		bufnullterm(sx->next->node);
-		iface = sx->next->node->data; }
+	if (sx && SX_IS_ATOM(sx)) port = SX_DATA(sx);
+	if (sx && sx->next && SX_IS_ATOM(sx->next)) iface = SX_DATA(sx->next);
 	if (!port) return;
 
 	/* address look-up */
@@ -236,13 +245,16 @@ add_listen_fd(struct array *poll_fds, struct sexp *sx) {
 	freeaddrinfo(res); }
 
 
-/* reload_options • reloads options from the given file, returns zero on fail*/
+/* reload_options • reloads options from the given file */
+/*	returns 0 on success, -1 on failure */
 static int
 reload_options(struct server_options *opt) {
-	struct sexp *sx, *s;
+	struct sexp sx;
+	struct sx_node *s;
 	struct server_options neo;
 	FILE *f;
 	time_t mt;
+	int i;
 
 	/* checking whether the file has changed */
 	mt = get_mtime(opt->filename);
@@ -255,9 +267,9 @@ reload_options(struct server_options *opt) {
 	if (!f) {
 		log_s_open_config(opt->filename);
 		return 0; }
-	sx = sxp_read(f, 4096);
+	i = sxp_file_to_sx(&sx, f, 4096, 4096, 64);
 	fclose(f);
-	if (!sx) {
+	if (i < 0 || !sx.nsize) {
 		log_s_empty_config(opt->filename);
 		return 0; }
 
@@ -272,22 +284,22 @@ reload_options(struct server_options *opt) {
 		neo.fds.size = opt->fds.size; }
 
 	/* reading S-expression data */
-	for (s = sx; s; s = s->next)
-		if (!s->list || !s->list->node) continue;
-		else if (!bufcmps(s->list->node, "listen"))
-			add_listen_fd(&neo.fds, s->list->next);
-		else if (!bufcmps(s->list->node, "account")) {
+	for (s = sx.nodes; s; s = s->next)
+		if (!SX_CHILD(s) || !SX_CHILD(s)->next) continue;
+		else if (!strcmp(SX_DATA(SX_CHILD(s)), "listen"))
+			add_listen_fd(&neo.fds, SX_CHILD(s)->next);
+		else if (!strcmp(SX_DATA(SX_CHILD(s)), "account")) {
 			struct account acc, *pacc;
 			init_account(&acc);
-			parse_account(&acc, s->list->next);
-			if (!acc.name || !acc.name->size
-			||  !acc.key  || !acc.key->size) {
+			parse_account(&acc, SX_CHILD(s)->next);
+			if (!acc.name || !acc.nsize
+			||  !acc.key  || !acc.ksize) {
 				free_account(&acc);
 				continue; }
 			pacc = arr_item(&neo.accounts,
 						arr_newitem(&neo.accounts));
 			*pacc = acc; }
-		else log_s_bad_cmd(s->list->node);
+		else log_s_bad_cmd(SX_DATA(SX_CHILD(s)));
 
 	/* sanity checks */
 	if (!neo.fds.size) {
@@ -304,7 +316,7 @@ reload_options(struct server_options *opt) {
 	*opt = neo;
 
 	/* clean-up */
-	sx_free(sx);
+	sx_release(&sx);
 	return 1; }
 
 
@@ -326,6 +338,7 @@ static int terminated = 0;
 /* sig_handler • handling SIGTERM to exit cleanly */
 static void
 sig_handler(int a) {
+	(void)a;
 	terminated = 1; }
 
 
@@ -352,7 +365,7 @@ process_message(struct server_options *opt, struct raw_message *rmsg) {
 		return; }
 
 	/* checking hmac */
-	sha1_hmac(hmac, rmsg->data, msglen, acc->key->data, acc->key->size);
+	sha1_hmac(hmac, rmsg->data, msglen, acc->key, acc->ksize);
 	for (i = 0; i < 20; i += 1) if (msg.hmac[i] != hmac[i]) break;
 	if (i < 20) {
 		log_s_bad_hmac(&msg, hmac);
@@ -398,8 +411,8 @@ process_message(struct server_options *opt, struct raw_message *rmsg) {
 	/* marking the account as active */
 	if (!acc->flags.active) {
 		acc->flags.active = 1;
-		log_s_account_up(acc->name, msg.addr); }
-	else log_s_addr_change(acc->name, acc->last_addr, msg.addr);
+		log_s_account_up(acc->name, acc->nsize, msg.addr); }
+	else log_s_addr_change(acc->name, acc->nsize, acc->last_addr, msg.addr);
 
 	/* copying the new address */
 	acc->last_addr[0] = msg.addr[0];
@@ -426,7 +439,8 @@ check_timeout(struct server_options *opt) {
 
 		/* checking time out */
 		if (acc[i].last_seen + acc[i].timeout <= now) {
-			log_s_account_down(acc[i].name, acc[i].last_addr);
+			log_s_account_down(acc[i].name, acc[i].nsize,
+							acc[i].last_addr);
 			acc[i].flags.active = 0;
 			acc[i].last_addr[0] = acc[i].last_addr[1] = 
 				acc[i].last_addr[2] = acc[i].last_addr[3] = 0;
@@ -461,7 +475,7 @@ main(int argc, char **argv) {
 	arr_init(&rmsgs, sizeof (struct raw_message));
 	init_server_options(&opt);
 	opt.filename = argv[1];
-	if (!reload_options(&opt)) {
+	if (reload_options(&opt) < 0) {
 		log_s_bad_config();
 		return EXIT_FAILURE; }
 

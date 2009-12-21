@@ -16,8 +16,8 @@
 
 DEPDIR=depends
 ALLDEPS=$(DEPDIR)/all
-CFLAGS=-c -g -O3 -Wall -Werror
-LDFLAGS=-g -O3 -Wall -Werror
+CFLAGS=-c -g -O3 -Wall -Wextra -Werror -fno-builtin -ansi -pedantic
+LDFLAGS=-g -O3 -Wall -Wextra -Werror -fno-builtin -ansi -pedantic
 CC=gcc
 
 all:		sha1-test client server
@@ -27,11 +27,10 @@ all:		sha1-test client server
 
 # Main project links
 
-client:		client.o buffer.o array.o sexp.o sha1.o message.o log-stderr.o
+client:		client.o array.o csexp.o sha1.o message.o log-stderr.o
 	$(CC) $(LDFLAGS) $(.ALLSRC) -o $(.TARGET)
 
-server:		server.o buffer.o array.o sexp.o sha1.o message.o log-stderr.o\
-		utils.o
+server:		server.o array.o csexp.o sha1.o message.o log-stderr.o utils.o
 	$(CC) $(LDFLAGS) $(.ALLSRC) -o $(.TARGET)
 
 sha1-test:	sha1-test.o sha1.o
