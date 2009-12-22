@@ -152,8 +152,8 @@ void
 log_s_addr_mismatch(struct ddns_message *msg, const unsigned char *peer) {
 	fprintf(stderr, "Address mismatch between peer %u.%u.%u.%u "
 			"and message %u.%u.%u.%u\n",
-		msg->addr[0], msg->addr[1], msg->addr[2], msg->addr[3],
-		peer[0], peer[1], peer[2], peer[3]); }
+		peer[0], peer[1], peer[2], peer[3],
+		msg->addr[0], msg->addr[1], msg->addr[2], msg->addr[3]); }
 
 void
 log_s_bad_account_cmd(const char *cmd) {
