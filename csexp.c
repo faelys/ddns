@@ -52,6 +52,7 @@ sx_copy(struct sexp *sx, struct sx_node *root) {
 		if (prev) prev->next = dst;
 		sx->nsize += 1;
 		prev = dst;
+		dst->next = 0;
 		if (SX_IS_ATOM(src)) {
 			if (src->size) {
 				dst->data = sx->data + sx->dsize;
