@@ -109,6 +109,9 @@ void
 log_s_bad_config(void);
 
 void
+log_s_bad_effector(const char *cmd);
+
+void
 log_s_bad_hmac(struct ddns_message *msg, unsigned char *real_hmac);
 
 void
@@ -146,6 +149,15 @@ log_s_recvfrom(void);
 
 void
 log_s_socket(const char *host, const char *port);
+
+void
+log_s_system(const char *cmd);
+
+void
+log_s_system_alloc(size_t sz);
+
+void
+log_s_system_error(const char *cmd, int status);
 
 void
 log_s_unsafe_forbidden(struct ddns_message *msg, const unsigned char *peer);

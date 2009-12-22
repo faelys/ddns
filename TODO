@@ -11,7 +11,6 @@ message:
   * logging encoding and decoding failures
 
 server:
-  * actual DNS update
   * common options for all accounts
 
 README:

@@ -18,6 +18,7 @@
 
 #include "array.h"
 #include "csexp.h"
+#include "effector.h"
 #include "log.h"
 #include "message.h"
 #include "sha1.h"
@@ -50,6 +51,7 @@ struct account {
 		unsigned allow_unsafe:1;
 		unsigned active:1;
 	}		 flags;
+	struct sexp	 effector;
 };
 
 
@@ -65,14 +67,18 @@ init_account(struct account *acc) {
 	acc->last_seen = 0;
 	acc->max_future = acc->max_past =  acc->timeout = -1;
 	acc->flags.active = 0;
-	acc->flags.allow_unsafe = 0; }
+	acc->flags.allow_unsafe = 0;
+	acc->effector.nsize = acc->effector.dsize = 0;
+	acc->effector.data = 0;
+	acc->effector.nodes = 0; }
 
 
 /* free_account • release of the struct account members */
 static void
 free_account(struct account *acc) {
 	free(acc->name);
-	free(acc->key); }
+	free(acc->key);
+	sx_release(&acc->effector); }
 
 
 /* data_cmp • comparison function checking size first, then contents */
@@ -130,6 +136,9 @@ parse_account(struct account *acc, struct sx_node *sx) {
 			acc->key = neo;
 			acc->ksize = arg->size;
 			memcpy(acc->key, arg->data, arg->size); }
+		else if (!strcmp(cmd, "effector")) {
+			sx_release(&acc->effector);
+			sx_dup(&acc->effector, arg); }
 		else if (!strcmp(cmd, "interval")) {
 			acc->max_past = mkinter(arg);
 			acc->max_future = arg->next ? mkinter(arg->next)
@@ -420,7 +429,8 @@ process_message(struct server_options *opt, struct raw_message *rmsg) {
 	acc->last_addr[2] = msg.addr[2];
 	acc->last_addr[3] = msg.addr[3];
 
-	/* TODO: actual DNS update */ }
+	/* actual DNS update */
+	set_addr(acc->effector.nodes, acc->name, acc->nsize, acc->last_addr); }
 
 
 /* check_timeout • checks accounts for timeouts, returns the time before next*/
@@ -444,7 +454,8 @@ check_timeout(struct server_options *opt) {
 			acc[i].flags.active = 0;
 			acc[i].last_addr[0] = acc[i].last_addr[1] = 
 				acc[i].last_addr[2] = acc[i].last_addr[3] = 0;
-			/* TODO: actual DNS update */
+			set_addr(acc[i].effector.nodes, acc[i].name,
+					acc[i].nsize, acc[i].last_addr);
 			continue; }
 
 		/* computing next timeout */

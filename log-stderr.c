@@ -172,6 +172,10 @@ log_s_bad_config(void) {
 	fprintf(stderr, "Bad starting config, exiting\n"); }
 
 void
+log_s_bad_effector(const char *cmd) {
+	fprintf(stderr, "Unkown server effector \"%.*s\"\n", cmd); }
+
+void
 log_s_bad_hmac(struct ddns_message *msg, unsigned char *real_hmac) {
 	(void)msg;
 	(void)real_hmac;
@@ -229,6 +233,19 @@ void
 log_s_socket(const char *host, const char *port) {
 	fprintf(stderr, "Unable to create socket for %s:%s: %s\n",
 		host ? host : "*", port ? port : "*", strerror(errno)); }
+
+void
+log_s_system(const char *cmd) {
+	fprintf(stderr, "system(\"%s\") fail\n", cmd); }
+
+void
+log_s_system_alloc(size_t sz) {
+	fprintf(stderr, "Unable to allocate %zu bytes for system effector\n",
+				sz); }
+
+void
+log_s_system_error(const char *cmd, int status) {
+	fprintf(stderr, "System effector \"%s\" failure (%d)\n", cmd, status);}
 
 void
 log_s_unsafe_forbidden(struct ddns_message *msg, const unsigned char *peer) {

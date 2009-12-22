@@ -30,7 +30,8 @@ all:		sha1-test client server
 client:		client.o array.o csexp.o sha1.o message.o log-stderr.o sensor.o
 	$(CC) $(LDFLAGS) $(.ALLSRC) -o $(.TARGET)
 
-server:		server.o array.o csexp.o sha1.o message.o log-stderr.o utils.o
+server:		server.o array.o csexp.o sha1.o message.o log-stderr.o utils.o\
+		effector.o
 	$(CC) $(LDFLAGS) $(.ALLSRC) -o $(.TARGET)
 
 sha1-test:	sha1-test.o sha1.o
