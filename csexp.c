@@ -58,7 +58,7 @@ sx_copy(struct sexp *sx, struct sx_node *root) {
 				dst->size = src->size;
 				memcpy(dst->data, src->data, dst->size);
 				SX_DATA(dst)[dst->size] = 0;
-				sx->dsize += dst->size; }
+				sx->dsize += dst->size + 1; }
 			else {
 				dst->data = sx->data;
 				dst->size = 0; } }
