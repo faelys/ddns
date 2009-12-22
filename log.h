@@ -19,7 +19,6 @@
 #ifndef DDNS_LOG_H
 #define DDNS_LOG_H
 
-#include "buffer.h"
 #include "message.h"
 
 #include <netdb.h>
@@ -36,6 +35,9 @@ void
 log_c_bad_cmd(const char *cmd);
 
 void
+log_c_bad_sensor(const char *cmd);
+
+void
 log_c_connect(const char *host, const char *port, struct addrinfo *ai);
 
 void
@@ -43,6 +45,15 @@ log_c_getaddrinfo(const char *host, const char *port, int errcode);
 
 void
 log_c_no_options(void);
+
+void
+log_c_pipe_bad_addr(const char *buf, size_t size);
+
+void
+log_c_pipe_error(const char *cmd);
+
+void
+log_c_pipe_read_error(const char *cmd);
 
 void
 log_c_send_fail(const void *data, size_t datalen);

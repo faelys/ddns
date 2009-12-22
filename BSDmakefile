@@ -27,7 +27,7 @@ all:		sha1-test client server
 
 # Main project links
 
-client:		client.o array.o csexp.o sha1.o message.o log-stderr.o
+client:		client.o array.o csexp.o sha1.o message.o log-stderr.o sensor.o
 	$(CC) $(LDFLAGS) $(.ALLSRC) -o $(.TARGET)
 
 server:		server.o array.o csexp.o sha1.o message.o log-stderr.o utils.o

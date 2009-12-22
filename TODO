@@ -1,5 +1,4 @@
 client:
-  * self address discovering (for safe mode)
   * better logging?
 
 examples:

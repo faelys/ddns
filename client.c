@@ -19,6 +19,7 @@
 #include "csexp.h"
 #include "log.h"
 #include "message.h"
+#include "sensor.h"
 
 #include <netinet/in.h>
 #include <stdlib.h>
@@ -40,10 +41,11 @@ struct client_options {
 	size_t		 nsize;
 	char		*key;
 	size_t		 ksize;
-	int		 interval; };
+	int		 interval;
+	struct sexp	 sensor; };
 
 /* DEFAULT_OPT • initializer for struct client_options */
-#define DEFAULT_OPT { 0, 0, 0, 0, 0, 0, 0 }
+#define DEFAULT_OPT { 0, 0, 0, 0, 0, 0, 0, { 0, 0, 0, 0 } }
 
 
 /* free_options • releases internal memory from struct client_options */
@@ -53,7 +55,8 @@ free_options(struct client_options *opt) {
 	free(opt->host);
 	free(opt->port);
 	free(opt->name);
-	free(opt->key); }
+	free(opt->key);
+	sx_release(&opt->sensor); }
 
 
 /* parse_options • fills in a struct client_options from a S-expression */
@@ -95,6 +98,9 @@ parse_options(struct client_options *opt, struct sx_node *sx) {
 		else if (!strcmp(cmd, "interval")) {
 			if (SX_IS_ATOM(arg) && arg->size)
 				nopt.interval = atoi(arg->data); }
+		else if (!strcmp(cmd, "sensor")) {
+			sx_release(&nopt.sensor);
+			sx_dup(&nopt.sensor, arg); }
 		else log_c_bad_cmd(cmd);
 
 	/* conformity checks */
@@ -193,11 +199,13 @@ client_loop(struct client_options *opt) {
 	msg.namelen = opt->nsize;
 	msg.addr[0] = msg.addr[1] = msg.addr[2] = msg.addr[3] = 0;
 
-	if (opt->interval <= 0)
-		return send_message(fd, &msg, opt->key,  opt->ksize);
+	if (opt->interval <= 0) {
+		get_own_addr(msg.addr, opt->sensor.nodes);
+		return send_message(fd, &msg, opt->key,  opt->ksize); }
 
 	for (;;) {
 		msg.time = time(0);
+		get_own_addr(msg.addr, opt->sensor.nodes);
 		if (send_message(fd, &msg, opt->key, opt->ksize) < 0) return -1;
 		sleep(opt->interval); }
 

@@ -42,6 +42,11 @@ log_c_bad_cmd(const char *cmd) {
 
 
 void
+log_c_bad_sensor(const char *cmd) {
+	fprintf(stderr, "Unknown address sensor \"%s\"\n", cmd); }
+
+
+void
 log_c_connect(const char *host, const char *port, struct addrinfo *ai) {
 	fprintf(stderr, "Unable to connect() to %s:%s (%s): %s\n",
 			host, port, ai->ai_canonname, strerror(errno)); }
@@ -55,6 +60,21 @@ log_c_getaddrinfo(const char *host, const char *port, int errcode) {
 
 void
 log_c_no_options(void) { }
+
+
+void
+log_c_pipe_bad_addr(const char *buf, size_t size) {
+	fprintf(stderr, "Bad pipe sesnsor output: \"%.*s\"\n",
+							(int)size, buf); }
+
+void
+log_c_pipe_error(const char *cmd) {
+	fprintf(stderr, "Error while popen()ing \"%s\"\n", cmd); }
+
+
+void
+log_c_pipe_read_error(const char *cmd) {
+	fprintf(stderr, "Error while reading output of \"%s\"\n", cmd); }
 
 
 void
