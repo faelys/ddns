@@ -20,6 +20,7 @@
 #include "log.h"
 #include "message.h"
 #include "sensor.h"
+#include "utils.h"
 
 #include <netinet/in.h>
 #include <stdlib.h>
@@ -212,19 +213,76 @@ client_loop(struct client_options *opt) {
 	return 0; }
 
 
+/* load_sx • loads a S-expression from the given file */
+int
+load_sx(struct sexp *sx, const char *filename) {
+	FILE *in;
+	int ret;
+
+	in = fopen(filename, "rb");
+	if (!in) {
+		log_c_open_conf(filename);
+		return -1; }
+	ret = sxp_file_to_sx(sx, in, 1024, 1024, 64);
+	fclose(in);
+	return ret; }
+
+
+/* usage • prints the command line usage string */
+void
+usage(const char *name) {
+	fprintf(stderr, "Usage: %s [-c conffile] [-d] "
+			"[-t chrootdir] [-u username]\n",
+			name); }
+
+
 /* main */
 int
-main(void) {
+main(int argc, char **argv) {
 	struct sexp arg;
 	struct client_options opt = DEFAULT_OPT;
+	int daemon = 0, i;
+	char *user = 0, *root = 0, *filename = 0;
 
-	if (sxp_file_to_sx(&arg, stdin, 1024, 1024, 64) < 0
+	/* argument parsing */
+	while ((i = getopt(argc, argv, "dc:u:t:")) != -1)
+		switch (i) {
+		case 'd':
+			daemon = 1;
+			break;
+		case 'c':
+			filename = optarg;
+			break;
+		case 'u':
+			user = optarg;
+			break;
+		case 't':
+			root = optarg;
+			break;
+		default:
+			usage(argv[0]);
+			return EXIT_FAILURE; }
+
+	/* chroot and stuff */
+	set_user_root(root, user);
+
+	/* loading options */
+	if (load_sx(&arg, filename) < 0
 	|| arg.nsize <= 0) {
 		log_c_no_options();
+		usage(argv[0]);
 		return EXIT_FAILURE; }
+	if (parse_options(&opt, arg.nodes) < 0)
+		 return EXIT_FAILURE;
 
-	if (parse_options(&opt, arg.nodes) < 0
-	|| client_loop(&opt) < 0)
+	/* daemonization */
+	if (daemon
+	&& opt.interval > 0
+	&& daemonize() < 0)
+		 return EXIT_FAILURE;
+
+	/* main loop */
+	if (client_loop(&opt) < 0)
 		 return EXIT_FAILURE;
 
 	return 0; }

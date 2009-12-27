@@ -64,6 +64,12 @@ log_c_no_options(void) { }
 
 
 void
+log_c_open_conf(const char *filename) {
+	fprintf(stderr, "Unable to open configuration file \"%s\": %s\n",
+				filename, strerror(errno)); }
+
+
+void
 log_c_pipe_bad_addr(const char *buf, size_t size) {
 	fprintf(stderr, "Bad pipe sesnsor output: \"%.*s\"\n",
 							(int)size, buf); }

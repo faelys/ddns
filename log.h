@@ -47,6 +47,9 @@ void
 log_c_no_options(void);
 
 void
+log_c_open_conf(const char *filename);
+
+void
 log_c_pipe_bad_addr(const char *buf, size_t size);
 
 void
