@@ -252,4 +252,30 @@ log_s_unsafe_forbidden(struct ddns_message *msg, const unsigned char *peer) {
 	fprintf(stderr, "Rejecting unsafe message\n");
 	log_m_message(msg, peer); }
 
+void
+log_s_zone_open_r(const char *filename) {
+	fprintf(stderr, "Unable to read zone file \"%s\"\n", filename); }
+
+void
+log_s_zone_open_w(const char *filename) {
+	fprintf(stderr, "Unable to write to zone file \"%s\"\n", filename); }
+
+void
+log_s_zone_realloc(const char *filename, size_t asize) {
+	fprintf(stderr, "Unable to realloc() %zu bytes "
+			"while reading zone \"%s\"\n",
+			asize, filename); }
+
+void
+log_s_zone_short_write(const char *filename, size_t written, size_t size) {
+	fprintf(stderr, "Short write to zone file \"%s\" (%zu/%zu)\n",
+				filename, written, size); }
+
+void
+log_s_zone_update(const char *filename, const char *name, size_t nsize,
+					unsigned char addr[4]) {
+	fprintf(stderr, "Updating zone \"%s\" record \"%.*s\" to %u.%u.%u.%u\n",
+			filename, (int)nsize, name,
+			addr[0], addr[1], addr[2], addr[3]); }
+
 /* vim: set filetype=c: */

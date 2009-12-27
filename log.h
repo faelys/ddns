@@ -162,6 +162,22 @@ log_s_system_error(const char *cmd, int status);
 void
 log_s_unsafe_forbidden(struct ddns_message *msg, const unsigned char *peer);
 
+void
+log_s_zone_open_r(const char *filename);
+
+void
+log_s_zone_open_w(const char *filename);
+
+void
+log_s_zone_realloc(const char *filename, size_t asize);
+
+void
+log_s_zone_short_write(const char *filename, size_t written, size_t size);
+
+void
+log_s_zone_update(const char *filename, const char *name, size_t nsize,
+					unsigned char addr[4]);
+
 #endif /* ndef DDNS_LOG_H */
 
 /* vim: set filetype=c: */
