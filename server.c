@@ -31,6 +31,7 @@
 #include <strings.h>
 #include <sys/socket.h>
 #include <sys/types.h>
+#include <unistd.h>
 
 
 /*******************
@@ -465,6 +466,14 @@ check_timeout(struct server_options *opt) {
 	return ret; }
 
 
+/* usage • prints the command line usage string */
+void
+usage(const char *name) {
+	fprintf(stderr, "Usage: %s [-c conffile] [-d] "
+			"[-t chrootdir] [-u username]\n",
+			name); }
+
+
 /* main • main program loop */
 int
 main(int argc, char **argv) {
@@ -476,19 +485,48 @@ main(int argc, char **argv) {
 	struct raw_message *rmsg;
 	ssize_t sret;
 	socklen_t si_other_len;
-
-	/* arguments checks */
-	if (argc < 2) {
-		log_s_no_config();
-		return EXIT_FAILURE; }
+	int daemon = 0;
+	char *user = 0, *root = 0;
 
 	/* variable initialization */
 	arr_init(&rmsgs, sizeof (struct raw_message));
 	init_server_options(&opt);
-	opt.filename = argv[1];
+
+	/* argument parsing */
+	while ((i = getopt(argc, argv, "dc:u:t:")) != -1)
+		switch (i) {
+		case 'd':
+			daemon = 1;
+			break;
+		case 'c':
+			opt.filename = optarg;
+			break;
+		case 'u':
+			user = optarg;
+			break;
+		case 't':
+			root = optarg;
+			break;
+		default:
+			usage(argv[0]);
+			return EXIT_FAILURE; }
+
+	/* chroot and stuff */
+	set_user_root(root, user);
+
+	/* loading options */
+	if (!opt.filename) {
+		log_s_no_config();
+		usage(argv[0]);
+		return EXIT_FAILURE; }
 	if (reload_options(&opt) < 0) {
 		log_s_bad_config();
 		return EXIT_FAILURE; }
+
+	/* daemonization */
+	if (daemon
+	&& daemonize() < 0)
+		return EXIT_FAILURE;
 
 	/* TERM signal catching */
 	sa.sa_handler = sig_handler;
