@@ -22,9 +22,19 @@
 #include <sys/stat.h>
 
 
+/* daemonize • daemonises the application (inspired from FreeBSD's daemon()) */
+int
+daemonize(void);
+
+
 /* get_mtime • stat() a file and returns its modification time */
 time_t
 get_mtime(const char *filename);
+
+
+/* set_user_root • chroot() and/or setuid()+setgid() */
+int
+set_user_root(const char *root, const char *user);
 
 #endif /* ndef DDNS_UTILS_H */
 

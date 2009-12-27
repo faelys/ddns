@@ -71,7 +71,31 @@ log_c_socket(void);
  **************************/
 
 void
+log_m_bad_user(const char *user);
+
+void
+log_m_chdir(const char *root);
+
+void
+log_m_chroot(const char *root);
+
+void
+log_m_daemon(void);
+
+void
+log_m_fork(void);
+
+void
 log_m_message(struct ddns_message *msg, const unsigned char *peer);
+
+void
+log_m_setgid(const char *user);
+
+void
+log_m_setuid(const char *user);
+
+void
+log_m_setsid(void);
 
 void
 log_m_stat(const char *filename);

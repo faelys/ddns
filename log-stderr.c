@@ -21,6 +21,7 @@
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 
 
 /****************************
@@ -101,6 +102,28 @@ log_c_socket(void) {
  **************************/
 
 void
+log_m_bad_user(const char *user) {
+	fprintf(stderr, "Unable to get information about user \"%s\"\n",user);}
+
+void
+log_m_chdir(const char *root) {
+	(void)root;
+	fprintf(stderr, "Unable to chdir: %s\n", strerror(errno)); }
+
+void
+log_m_chroot(const char *root) {
+	fprintf(stderr, "Unable to chroot(%s); %s\n", root, strerror(errno)); }
+
+void
+log_m_daemon(void) {
+	fprintf(stderr, "Process successfully daemonized [%ld]\n",
+						(long)getpid()); }
+
+void
+log_m_fork(void) {
+	fprintf(stderr, "Unable to fork(): %s\n", strerror(errno)); }
+
+void
 log_m_message(struct ddns_message *msg, const unsigned char *peer) {
 	if (peer)
 		fprintf(stderr, "Message from %u.%u.%u.%u",
@@ -114,6 +137,18 @@ log_m_message(struct ddns_message *msg, const unsigned char *peer) {
 		fprintf(stderr, " name \"%.*s\"", (int)msg->namelen,msg->name);
 	fprintf(stderr, " address %u.%u.%u.%u\n",
 		msg->addr[0], msg->addr[1], msg->addr[2], msg->addr[3]); }
+
+void
+log_m_setgid(const char *user) {
+	fprintf(stderr, "Unable to setgid(%s): %s\n", user, strerror(errno)); }
+
+void
+log_m_setuid(const char *user) {
+	fprintf(stderr, "Unable to setuid(%s): %s\n", user, strerror(errno)); }
+
+void
+log_m_setsid(void) {
+	fprintf(stderr, "Unable to setsid(): %s\n", strerror(errno)); }
 
 void
 log_m_stat(const char *filename) {
