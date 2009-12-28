@@ -499,7 +499,7 @@ check_timeout(struct server_options *opt) {
 /* usage • prints the command line usage string */
 void
 usage(const char *name) {
-	fprintf(stderr, "Usage: %s [-c conffile] [-d] "
+	fprintf(stderr, "Usage: %s [-c conffile] [-d] [-p pidfile]"
 			"[-t chrootdir] [-u username]\n",
 			name); }
 
@@ -516,14 +516,14 @@ main(int argc, char **argv) {
 	ssize_t sret;
 	socklen_t si_other_len;
 	int daemon = 0;
-	char *user = 0, *root = 0;
+	char *user = 0, *root = 0, *pidfilename = 0;
 
 	/* variable initialization */
 	arr_init(&rmsgs, sizeof (struct raw_message));
 	init_server_options(&opt);
 
 	/* argument parsing */
-	while ((i = getopt(argc, argv, "dc:u:t:")) != -1)
+	while ((i = getopt(argc, argv, "dc:u:t:p:")) != -1)
 		switch (i) {
 		case 'd':
 			daemon = 1;
@@ -536,6 +536,9 @@ main(int argc, char **argv) {
 			break;
 		case 't':
 			root = optarg;
+			break;
+		case 'p':
+			pidfilename = optarg;
 			break;
 		default:
 			usage(argv[0]);
@@ -557,6 +560,8 @@ main(int argc, char **argv) {
 	if (daemon
 	&& daemonize() < 0)
 		return EXIT_FAILURE;
+	if (pidfilename && pidfile(pidfilename) < 0)
+		 return EXIT_FAILURE;
 
 	/* TERM signal catching */
 	sa.sa_handler = sig_handler;
@@ -598,6 +603,8 @@ main(int argc, char **argv) {
 		timeout = check_timeout(&opt); }
 
 	free_server_options(&opt);
+	if (pidfilename) unlink(pidfilename);
+	log_s_exiting();
 	return EXIT_SUCCESS; }
 
 /* vim: set filetype=c: */

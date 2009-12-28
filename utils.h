@@ -36,6 +36,11 @@ get_mtime(const char *filename);
 int
 set_user_root(const char *root, const char *user);
 
+
+/* pidfile • prints the process id into the given file */
+int
+pidfile(const char *filename);
+
 #endif /* ndef DDNS_UTILS_H */
 
 /* vim: set filetype=c: */

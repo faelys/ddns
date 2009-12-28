@@ -242,10 +242,10 @@ main(int argc, char **argv) {
 	struct sexp arg;
 	struct client_options opt = DEFAULT_OPT;
 	int daemon = 0, i;
-	char *user = 0, *root = 0, *filename = 0;
+	char *user = 0, *root = 0, *filename = 0, *pidfilename = 0;
 
 	/* argument parsing */
-	while ((i = getopt(argc, argv, "dc:u:t:")) != -1)
+	while ((i = getopt(argc, argv, "dc:u:t:p:")) != -1)
 		switch (i) {
 		case 'd':
 			daemon = 1;
@@ -258,6 +258,9 @@ main(int argc, char **argv) {
 			break;
 		case 't':
 			root = optarg;
+			break;
+		case 'p':
+			pidfilename = optarg;
 			break;
 		default:
 			usage(argv[0]);
@@ -280,11 +283,14 @@ main(int argc, char **argv) {
 	&& opt.interval > 0
 	&& daemonize() < 0)
 		 return EXIT_FAILURE;
+	if (pidfilename && pidfile(pidfilename) < 0)
+		 return EXIT_FAILURE;
 
 	/* main loop */
 	if (client_loop(&opt) < 0)
 		 return EXIT_FAILURE;
 
+	if (pidfilename) unlink(pidfilename);
 	return 0; }
 
 /* vim: set filetype=c: */

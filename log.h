@@ -41,6 +41,9 @@ void
 log_c_connect(const char *host, const char *port, struct addrinfo *ai);
 
 void
+log_c_exiting(void);
+
+void
 log_c_getaddrinfo(const char *host, const char *port, int errcode);
 
 void
@@ -90,6 +93,24 @@ log_m_fork(void);
 
 void
 log_m_message(struct ddns_message *msg, const unsigned char *peer);
+
+void
+log_m_pid_create(const char *filename);
+
+void
+log_m_pid_exist(const char *filename, long pid);
+
+void
+log_m_pid_invalid(const char *filename);
+
+void
+log_m_pid_kill(const char *filename, long pid);
+
+void
+log_m_pid_open(const char *filename);
+
+void
+log_m_pid_trunc(const char *filename);
 
 void
 log_m_setgid(const char *user);
@@ -146,6 +167,9 @@ log_s_bad_time(struct ddns_message *msg, int dt, int past, int future);
 
 void
 log_s_bind(const char *host, const char *port);
+
+void
+log_s_exiting(void);
 
 void
 log_s_getaddrinfo(const char *host, const char *port, int errcode);

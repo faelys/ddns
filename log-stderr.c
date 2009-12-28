@@ -52,6 +52,10 @@ log_c_connect(const char *host, const char *port, struct addrinfo *ai) {
 	fprintf(stderr, "Unable to connect() to %s:%s (%s): %s\n",
 			host, port, ai->ai_canonname, strerror(errno)); }
 
+void
+log_c_exiting(void) {
+	fprintf(stderr, "Client exiting\n"); }
+
 
 void
 log_c_getaddrinfo(const char *host, const char *port, int errcode) {
@@ -145,6 +149,35 @@ log_m_message(struct ddns_message *msg, const unsigned char *peer) {
 		msg->addr[0], msg->addr[1], msg->addr[2], msg->addr[3]); }
 
 void
+log_m_pid_create(const char *filename) {
+	fprintf(stderr, "Unable to create PID file \"%s\": %s\n",
+				filename, strerror(errno)); }
+
+void
+log_m_pid_exist(const char *filename, long pid) {
+	fprintf(stderr, "Error: PID file \"%s\" exists and is owned by %ld\n",
+				filename, pid); }
+
+void
+log_m_pid_invalid(const char *filename) {
+	fprintf(stderr, "Invalid PID in existing PID file \"%s\"\n",filename);}
+
+void
+log_m_pid_kill(const char *filename, long pid) {
+	fprintf(stderr, "kill(%ld, 0) from \"%s\" failure: %s\n",
+				pid, filename, strerror(errno)); }
+
+void
+log_m_pid_open(const char *filename) {
+	fprintf(stderr, "Unable to open existing PID file \"%s\": %s\n",
+				filename, strerror(errno)); }
+
+void
+log_m_pid_trunc(const char *filename) {
+	fprintf(stderr, "Unable to truncate existing PID file \"%s\": %s\n",
+				filename, strerror(errno)); }
+
+void
 log_m_setgid(const char *user) {
 	fprintf(stderr, "Unable to setgid(%s): %s\n", user, strerror(errno)); }
 
@@ -231,6 +264,10 @@ void
 log_s_bind(const char *host, const char *port) {
 	fprintf(stderr, "Unable to bind stocket to %s:%s: %s\n",
 		host ? host : "*", port ? port : "*", strerror(errno)); }
+
+void
+log_s_exiting(void) {
+	fprintf(stderr, "Server exiting\n"); }
 
 void
 log_s_getaddrinfo(const char *host, const char *port, int errcode) {
