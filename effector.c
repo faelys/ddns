@@ -20,6 +20,7 @@
 
 #include "log.h"
 
+#include <signal.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -221,6 +222,104 @@ effector_zone(struct sx_node *sx, const char *name, size_t nsize,
 			effector_one_zone(s->data, name, nsize, addr); }
 
 
+/* effector_kill_one • sends a signal to the process from the given pidfile */
+#define TESTSIG(x, st, si)	\
+	else if (!strcasecmp(st, #x) || !strcasecmp(st, "SIG" #x)) \
+		si = SIG ## x
+static void
+effector_kill_one(const char *signal, const char *pidfile) {
+	int sig, i;
+	FILE *f;
+	pid_t pid;
+	char c;
+
+	/* signal decoding */
+	if (!signal) sig = SIGHUP;
+	TESTSIG(ABRT, signal, sig);
+	TESTSIG(ALRM, signal, sig);
+	TESTSIG(BUS, signal, sig);
+	TESTSIG(CHLD, signal, sig);
+	TESTSIG(CONT, signal, sig);
+	TESTSIG(FPE, signal, sig);
+	TESTSIG(HUP, signal, sig);
+	TESTSIG(ILL, signal, sig);
+	TESTSIG(INT, signal, sig);
+	TESTSIG(KILL, signal, sig);
+	TESTSIG(PIPE, signal, sig);
+	TESTSIG(QUIT, signal, sig);
+	TESTSIG(SEGV, signal, sig);
+	TESTSIG(STOP, signal, sig);
+	TESTSIG(TERM, signal, sig);
+	TESTSIG(TSTP, signal, sig);
+	TESTSIG(TTIN, signal, sig);
+	TESTSIG(TTOU, signal, sig);
+	TESTSIG(USR1, signal, sig);
+	TESTSIG(USR2, signal, sig);
+	TESTSIG(PROF, signal, sig);
+/*	TESTSIG(POLL, signal, sig); */
+	TESTSIG(SYS, signal, sig);
+	TESTSIG(TRAP, signal, sig);
+	TESTSIG(URG, signal, sig);
+	TESTSIG(VTALRM, signal, sig);
+	TESTSIG(XCPU, signal, sig);
+	TESTSIG(XFSZ, signal, sig);
+	else {
+		i = 0;
+		sig = 0;
+		while (signal[i] >= '0' && signal[i] <= '9') {
+			sig = sig * 10 + signal[i] - '0';
+			i += 1; }
+		if (signal[i] != 0) {
+			log_s_effkill_bad_signal(signal, pidfile);
+			return; } }
+
+	/* pidfile reading */
+	f = fopen(pidfile, "rb");
+	if (!f) {
+		log_s_effkill_open(pidfile);
+		return; }
+	pid = 0;
+	while (fread(&c, 1, 1, f) > 0)
+		if (c >= '0' && c <= '9') pid = pid * 10 + c - '0';
+		else break;
+	fclose(f);
+	if (!pid) {
+		log_s_effkill_bad_pidfile(pidfile);
+		return; }
+
+	/* sending signal */
+	if (kill(pid, sig) < 0) {
+		log_s_effkill_kill(pid, pidfile, sig, signal);
+		return; } }
+
+
+/* effector_kill_one_sx • sends a single signal described by a S-exp */
+static void
+effector_kill_one_sx(struct sx_node *sx) {
+	if (!sx || !SX_IS_ATOM(sx)) return;
+	if (sx->next && SX_IS_ATOM(sx->next))
+		effector_kill_one(sx->data, sx->next->data);
+	else
+		effector_kill_one(0, sx->data); }
+
+
+/* effector_kill • sends signals described by a S-exp */
+static void
+effector_kill(struct sx_node *sx, const char *name, size_t nsize,
+						unsigned char addr[4]) {
+	struct sx_node *s;
+
+	(void)name;
+	(void)nsize;
+	(void)addr;
+
+	if (SX_IS_LIST(sx))
+		for (s = sx; s; s = s->next)
+			effector_kill_one_sx(SX_CHILD(s));
+	else
+		effector_kill_one_sx(sx); }
+
+
 
 /*********************
  * EXPORTED FUNCTION *
@@ -244,7 +343,9 @@ set_addr(struct sx_node *sx, const char *name, size_t nsize,
 			arg = SX_CHILD(s)->next; }
 		else continue;
 
-		if (!strcmp(cmd, "system"))
+		if (!strcmp(cmd, "kill"))
+			effector_kill(arg, name, nsize, addr);
+		else if (!strcmp(cmd, "system"))
 			effector_system(arg, name, nsize, addr);
 		else if (!strcmp(cmd, "zone"))
 			effector_zone(arg, name, nsize, addr);

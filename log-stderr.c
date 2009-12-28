@@ -271,6 +271,25 @@ log_s_bind(const char *host, const char *port) {
 		host ? host : "*", port ? port : "*", strerror(errno)); }
 
 void
+log_s_effkill_bad_signal(const char *signal, const char *pidfile) {
+	(void)pidfile;
+	fprintf(stderr, "Unkown signal \"%s\"\n", signal); }
+
+void
+log_s_effkill_open(const char *pidfile) {
+	fprintf(stderr, "Unable to open target PID file \"%s\": %s\n",
+				pidfile, strerror(errno)); }
+
+void
+log_s_effkill_bad_pidfile(const char *pidfile) {
+	fprintf(stderr, "Invalid PID file contents in \"%s\"\n", pidfile); }
+
+void
+log_s_effkill_kill(int pid, const char *pidfile, long sig, const char *signal){
+	fprintf(stderr, "kill(%d \"%s\", %ld \"%s\") failure: %s\n",
+		pid, pidfile, sig, signal, strerror(errno)); }
+
+void
 log_s_exiting(void) {
 	fprintf(stderr, "Server exiting\n"); }
 

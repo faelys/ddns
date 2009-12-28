@@ -172,6 +172,18 @@ void
 log_s_bind(const char *host, const char *port);
 
 void
+log_s_effkill_bad_signal(const char *signal, const char *pidfile);
+
+void
+log_s_effkill_open(const char *pidfile);
+
+void
+log_s_effkill_bad_pidfile(const char *pidfile);
+
+void
+log_s_effkill_kill(int pid, const char *pidfile, long sig, const char *signal);
+
+void
 log_s_exiting(void);
 
 void
