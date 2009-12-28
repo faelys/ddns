@@ -243,7 +243,7 @@ sig_handler(int a) {
 /* usage • prints the command line usage string */
 void
 usage(const char *name) {
-	fprintf(stderr, "Usage: %s [-c conffile] [-d] "
+	fprintf(stderr, "Usage: %s [-c conffile] [-d] [-p pidfile] "
 			"[-t chrootdir] [-u username]\n",
 			name); }
 
