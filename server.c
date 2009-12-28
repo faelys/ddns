@@ -521,6 +521,7 @@ main(int argc, char **argv) {
 	/* variable initialization */
 	arr_init(&rmsgs, sizeof (struct raw_message));
 	init_server_options(&opt);
+	log_open("ddns-server");
 
 	/* argument parsing */
 	while ((i = getopt(argc, argv, "dc:u:t:p:")) != -1)
@@ -605,6 +606,7 @@ main(int argc, char **argv) {
 	free_server_options(&opt);
 	if (pidfilename) unlink(pidfilename);
 	log_s_exiting();
+	log_close();
 	return EXIT_SUCCESS; }
 
 /* vim: set filetype=c: */

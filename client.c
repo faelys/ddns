@@ -257,6 +257,7 @@ main(int argc, char **argv) {
 	char *user = 0, *root = 0, *filename = 0, *pidfilename = 0;
 
 	/* argument parsing */
+	log_open("ddns-client");
 	while ((i = getopt(argc, argv, "dc:u:t:p:")) != -1)
 		switch (i) {
 		case 'd':
@@ -312,6 +313,7 @@ main(int argc, char **argv) {
 
 	if (pidfilename) unlink(pidfilename);
 	log_c_exiting();
+	log_close();
 	return 0; }
 
 /* vim: set filetype=c: */

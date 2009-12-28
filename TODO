@@ -4,8 +4,5 @@ client:
 examples:
   * making and committing them
 
-log:
-  * syslog implementation
-
 README:
   * explaining internals?

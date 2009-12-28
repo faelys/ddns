@@ -24,6 +24,18 @@
 #include <netdb.h>
 
 
+/**************************
+ * LOG MANAGING FUNCTIONS *
+ **************************/
+
+void
+log_open(const char *name);
+
+void
+log_close(void);
+
+
+
 /****************************
  * CLIENT LOGGING FUNCTIONS *
  ****************************/
