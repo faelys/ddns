@@ -499,7 +499,7 @@ check_timeout(struct server_options *opt) {
 /* usage • prints the command line usage string */
 void
 usage(const char *name) {
-	fprintf(stderr, "Usage: %s [-c conffile] [-d] [-p pidfile]"
+	fprintf(stderr, "Usage: %s [-c conffile] [-d] [-p pidfile] "
 			"[-t chrootdir] [-u username]\n",
 			name); }
 
