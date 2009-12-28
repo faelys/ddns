@@ -18,6 +18,7 @@
 
 #include "message.h"
 
+#include "log.h"
 #include "sha1.h"
 
 #include <string.h>
@@ -36,7 +37,12 @@ decode_time(time_t *out, const unsigned char *buf, size_t buflen) {
 	while (i < buflen && buf[i] >= '0' && buf[i] <= '9') {
 		r = (r * 10) + buf[i] - '0';
 		i += 1; }
-	if (i >= buflen || buf[i] != 0) return 0;
+	if (i >= buflen) {
+		log_s_short_time(buf, buflen);
+		return 0; }
+	if (buf[i] != 0) {
+		log_s_inval_time(buf, buflen);
+		return 0; }
 	*out = r;
 	return i + 1; }
 
@@ -50,7 +56,9 @@ encode_time(unsigned char *buf, size_t buflen, time_t date) {
 		buf[i] = '0' + date % 10;
 		date /= 10;
 		i += 1; }
-	if (i >= buflen) return 0;
+	if (i >= buflen) {
+		log_c_short_buf();
+		return 0; }
 	buf[i] = 0;
 	for (j = 0; j < i - 1 - j; j += 1) {
 		c = buf[i - 1 - j];
@@ -69,7 +77,9 @@ decode_name(const char **pname, size_t *pnamelen,
 				const unsigned char *buf, size_t buflen) {
 	unsigned i = 0;
 	while (i < buflen && buf[i] != 0) i += 1;
-	if (i >= buflen) return 0;
+	if (i >= buflen) {
+		log_s_short_name(buf, buflen);
+		return 0; }
 	*pname = (const char *)buf;
 	*pnamelen = i;
 	return i + 1; }
@@ -78,7 +88,9 @@ decode_name(const char **pname, size_t *pnamelen,
 static size_t
 encode_name(unsigned char *buf, size_t buflen,
 					const void *name, size_t namelen) {
-	if (namelen + 1 >= buflen) return 0;
+	if (namelen + 1 >= buflen) {
+		log_c_short_buf();
+		return 0; }
 	memcpy(buf, name, namelen);
 	buf[namelen] = 0;
 	return namelen + 1; }
@@ -91,7 +103,9 @@ encode_name(unsigned char *buf, size_t buflen,
 
 static size_t
 decode_addr(unsigned char out[4], const unsigned char *buf, size_t buflen) {
-	if (buflen < 5 || buf[4] != 0) return 0;
+	if (buflen < 5 || buf[4] != 0) {
+		log_s_short_addr(buf, buflen);
+		return 0; }
 	out[0] = buf[0];
 	out[1] = buf[1];
 	out[2] = buf[2];
@@ -101,7 +115,9 @@ decode_addr(unsigned char out[4], const unsigned char *buf, size_t buflen) {
 
 static size_t
 encode_addr(unsigned char *buf, size_t buflen, unsigned char addr[4]) {
-	if (buflen < 5) return 0;
+	if (buflen < 5) {
+		log_c_short_buf();
+		return 0; }
 	buf[0] = addr[0];
 	buf[1] = addr[1];
 	buf[2] = addr[2];
@@ -119,15 +135,18 @@ static size_t
 decode_hmac(unsigned char *out, const unsigned char *buf, size_t buflen) {
 	if (buflen < HMAC_SIZE + sizeof HMAC_NAME - 1
 	|| strncmp((const char *)buf + HMAC_SIZE,
-					HMAC_NAME, sizeof HMAC_NAME - 1))
-		return 0;
+					HMAC_NAME, sizeof HMAC_NAME - 1)) {
+		log_s_hmac_decode_error(buf, buflen);
+		return 0; }
 	memcpy(out, buf, HMAC_SIZE);
 	return HMAC_SIZE + sizeof HMAC_NAME - 1; }
 
 
 static size_t
 encode_hmac(unsigned char *buf, size_t buflen, unsigned char *hmac) {
-	if (buflen < HMAC_SIZE + sizeof HMAC_NAME - 1) return 0;
+	if (buflen < HMAC_SIZE + sizeof HMAC_NAME - 1) {
+		log_c_short_buf();
+		return 0; }
 	memcpy(buf, hmac, HMAC_SIZE);
 	memcpy(buf + HMAC_SIZE, HMAC_NAME, sizeof HMAC_NAME - 1);
 	return HMAC_SIZE + sizeof HMAC_NAME - 1; }

@@ -7,8 +7,5 @@ examples:
 log:
   * syslog implementation
 
-message:
-  * logging encoding and decoding failures
-
 README:
   * explaining internals?

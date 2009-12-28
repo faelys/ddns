@@ -68,6 +68,9 @@ void
 log_c_send_short(const void *data, size_t datalen, size_t sent);
 
 void
+log_c_short_buf(void);
+
+void
 log_c_socket(void);
 
 
@@ -181,6 +184,12 @@ void
 log_s_fd_error(void);
 
 void
+log_s_hmac_decode_error(const unsigned char *buf, size_t buflen);
+
+void
+log_s_inval_time(const unsigned char *buf, size_t buflen);
+
+void
 log_s_listen_nb(int nb);
 
 void
@@ -197,6 +206,15 @@ log_s_open_config(const char *filename);
 
 void
 log_s_recvfrom(void);
+
+void
+log_s_short_addr(const unsigned char *buf, size_t buflen);
+
+void
+log_s_short_name(const unsigned char *buf, size_t buflen);
+
+void
+log_s_short_time(const unsigned char *buf, size_t buflen);
 
 void
 log_s_socket(const char *host, const char *port);

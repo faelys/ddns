@@ -102,6 +102,11 @@ log_c_send_short(const void *data, size_t datalen, size_t sent) {
 
 
 void
+log_c_short_buf(void) {
+	fprintf(stderr, "Message buffer too short\n"); }
+
+
+void
 log_c_socket(void) {
 	fprintf(stderr, "Unable to create socket: %s\n", strerror(errno)); }
 
@@ -283,6 +288,18 @@ log_s_fd_error(void) {
 	fprintf(stderr, "Polled socket is in an error state\n"); }
 
 void
+log_s_hmac_decode_error(const unsigned char *buf, size_t buflen) {
+	(void)buf;
+	(void)buflen;
+	fprintf(stderr, "HMAC decoding error\n"); }
+
+void
+log_s_inval_time(const unsigned char *buf, size_t buflen) {
+	(void)buf;
+	(void)buflen;
+	fprintf(stderr, "Invalid packet\n"); }
+
+void
 log_s_listen_nb(int nb) {
 	fprintf(stderr, "Listening on %d sockets\n", nb); }
 
@@ -306,6 +323,24 @@ log_s_open_config(const char *filename) {
 void
 log_s_recvfrom(void) {
 	fprintf(stderr, "recvfrom failure: %s\n", strerror(errno)); }
+
+void
+log_s_short_addr(const unsigned char *buf, size_t buflen) {
+	(void)buf;
+	(void)buflen;
+	fprintf(stderr, "Message too short (packet truncated?)\n"); }
+
+void
+log_s_short_name(const unsigned char *buf, size_t buflen) {
+	(void)buf;
+	(void)buflen;
+	fprintf(stderr, "Message too short (packet truncated?)\n"); }
+
+void
+log_s_short_time(const unsigned char *buf, size_t buflen) {
+	(void)buf;
+	(void)buflen;
+	fprintf(stderr, "Message too short (packet truncated?)\n"); }
 
 void
 log_s_socket(const char *host, const char *port) {
