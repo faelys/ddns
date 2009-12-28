@@ -20,9 +20,11 @@ CFLAGS=-c -g -O3 -Wall -Wextra -Werror -fno-builtin -std=c99 -pedantic
 LDFLAGS=-g -O3 -Wall -Wextra -Werror -fno-builtin -std=c99 -pedantic
 CC=gcc
 
-all:		sha1-test ddns-client ddns-server
+default:	ddns-client ddns-server
 
-.PHONY:		all clean
+all:		sha1-test ddns-client ddns-server stderr-client stderr-server
+
+.PHONY:		default all clean
 
 
 # Main project links
@@ -32,6 +34,14 @@ ddns-client:	client.o array.o csexp.o sha1.o message.o log-syslog.o utils.o\
 	$(CC) $(LDFLAGS) $(.ALLSRC) -o $(.TARGET)
 
 ddns-server:	server.o array.o csexp.o sha1.o message.o log-syslog.o utils.o\
+		effector.o
+	$(CC) $(LDFLAGS) $(.ALLSRC) -o $(.TARGET)
+
+stderr-client:	client.o array.o csexp.o sha1.o message.o log-stderr.o utils.o\
+		sensor.o
+	$(CC) $(LDFLAGS) $(.ALLSRC) -o $(.TARGET)
+
+stderr-server:	server.o array.o csexp.o sha1.o message.o log-stderr.o utils.o\
 		effector.o
 	$(CC) $(LDFLAGS) $(.ALLSRC) -o $(.TARGET)
 
