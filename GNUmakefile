@@ -16,8 +16,8 @@
 
 DEPDIR=depends
 ALLDEPS=$(DEPDIR)/all
-CFLAGS=-c -g -O3 -Wall -Wextra -Werror -fno-builtin -std=c99 -pedantic
-LDFLAGS=-g -O3 -Wall -Wextra -Werror -fno-builtin -std=c99 -pedantic
+CFLAGS=-c -g -O3 -Wall -Wextra -Werror -fno-builtin -std=c99 -pedantic -DHAVE_CONFIG_H
+LDFLAGS=-g -O3 -Wall -Wextra -Werror -fno-builtin -std=c99 -pedantic -DHAVE_CONFIG_H
 CC=gcc
 
 default:	ddns-client ddns-server
