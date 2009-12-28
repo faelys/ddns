@@ -18,6 +18,7 @@
 
 #include "sha1.h"
 
+#include <stdio.h>
 #include <string.h>
 
 
@@ -249,10 +250,10 @@ sha1_hmac(unsigned char output[20], const void *msg, size_t msg_size,
 	memset(ukey, 0, sizeof ukey);
 
 	/* if the key is longer than a block, use its hash insead */
-	if (key_size < sizeof ukey)
-		memcpy(ukey, key, key_size);
-	else
+	if (key_size > sizeof ukey)
 		sha1_hash(ukey, key, key_size);
+	else
+		memcpy(ukey, key, key_size);
 
 	/* inner hash: key ^ 0x36 (ipad), message */
 	for (i = 0; i < sizeof ukey; i += 1) ukey[i] ^= 0x36;
