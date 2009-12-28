@@ -33,34 +33,22 @@ all:		GNUmakefile sha1-test \
 
 ddns-client:	client.o array.o csexp.o sha1.o message.o log-syslog.o utils.o\
 		sensor.o
-	$(CC) $(LDFLAGS) $(.ALLSRC) -o $(.TARGET)
+	$(CC) $(LDFLAGS) $^ -o $@
 
 ddns-server:	server.o array.o csexp.o sha1.o message.o log-syslog.o utils.o\
 		effector.o
-	$(CC) $(LDFLAGS) $(.ALLSRC) -o $(.TARGET)
+	$(CC) $(LDFLAGS) $^ -o $@
 
 stderr-client:	client.o array.o csexp.o sha1.o message.o log-stderr.o utils.o\
 		sensor.o
-	$(CC) $(LDFLAGS) $(.ALLSRC) -o $(.TARGET)
+	$(CC) $(LDFLAGS) $^ -o $@
 
 stderr-server:	server.o array.o csexp.o sha1.o message.o log-stderr.o utils.o\
 		effector.o
-	$(CC) $(LDFLAGS) $(.ALLSRC) -o $(.TARGET)
+	$(CC) $(LDFLAGS) $^ -o $@
 
 sha1-test:	sha1-test.o sha1.o
-	$(CC) $(LDFLAGS) $(.ALLSRC) -o $(.TARGET)
-
-GNUmakefile:	BSDmakefile
-		sed	-e 's/^\(all:.*\) GNUmakefile/\1/' \
-			-e '/^GNUmakefile:/,/^$$/d' \
-			-e 's/\$$(\.ALLSRC)/$$^/g' \
-			-e 's/\$$(\.IMPSRC)/$$</g' \
-			-e 's/\$$(\.OODATE)/$$?/g' \
-			-e 's/\$$(\.MEMBER)/$$%/g' \
-			-e 's/\$$(\.PREFIX)/$$*/g' \
-			-e 's/\$$(\.TARGET)/$$@/g' \
-			-e 's/^\.sinclude/-include/' \
-			< $(.ALLSRC) > $(.TARGET)
+	$(CC) $(LDFLAGS) $^ -o $@
 
 clean:
 	rm -f *.o
@@ -70,7 +58,7 @@ clean:
 
 # dependencies
 
-.sinclude "$(ALLDEPS)"
+-include "$(ALLDEPS)"
 
 
 # generic object compilations
@@ -78,15 +66,15 @@ clean:
 .c.o:
 	@mkdir -p $(DEPDIR)
 	@touch $(ALLDEPS)
-	@$(CC) -MM $(.IMPSRC) > $(DEPDIR)/$(.PREFIX).d
-	@grep -q "$(.PREFIX).d" $(ALLDEPS) \
-			|| echo ".include \"$(.PREFIX).d\"" >> $(ALLDEPS)
-	$(CC) $(CFLAGS) -o $(.TARGET) $(.IMPSRC)
+	@$(CC) -MM $< > $(DEPDIR)/$*.d
+	@grep -q "$*.d" $(ALLDEPS) \
+			|| echo ".include \"$*.d\"" >> $(ALLDEPS)
+	$(CC) $(CFLAGS) -o $@ $<
 
 .m.o:
 	@mkdir -p $(DEPDIR)
 	@touch $(ALLDEPS)
-	@$(CC) -MM $(.IMPSRC) > depends/$(.PREFIX).d
-	@grep -q "$(.PREFIX).d" $(ALLDEPS) \
-			|| echo ".include \"$(.PREFIX).d\"" >> $(ALLDEPS)
-	$(CC) $(CFLAGS) -o $(.TARGET) $(.IMPSRC)
+	@$(CC) -MM $< > depends/$*.d
+	@grep -q "$*.d" $(ALLDEPS) \
+			|| echo ".include \"$*.d\"" >> $(ALLDEPS)
+	$(CC) $(CFLAGS) -o $@ $<
