@@ -212,7 +212,7 @@ client_loop(struct client_options *opt) {
 	while (!terminated) {
 		msg.time = time(0);
 		get_own_addr(msg.addr, opt->sensor.nodes);
-		if (send_message(fd, &msg, opt->key, opt->ksize) < 0) return -1;
+		send_message(fd, &msg, opt->key, opt->ksize);
 		sleep(opt->interval); }
 
 	return 0; }
