@@ -398,6 +398,15 @@ log_s_unsafe_forbidden(struct ddns_message *msg, const unsigned char *peer) {
 	log_m_message(msg, peer); }
 
 void
+log_s_zone_future_serial(const char *serial, const char *filename) {
+	fprintf(stderr, "Invalid serial \"%.10s\" from zone \"%s\"\n",
+				serial, filename); }
+
+void
+log_s_zone_no_serial(const char *filename) {
+	fprintf(stderr, "Unable to find serial in zone \"%s\"\n", filename); }
+
+void
 log_s_zone_open_r(const char *filename) {
 	fprintf(stderr, "Unable to read zone file \"%s\"\n", filename); }
 

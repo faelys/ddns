@@ -95,6 +95,61 @@ effector_system(struct sx_node *sx, const char *name, size_t nsize,
 	return j ? -1 : 0; }
 
 
+/* update_serial • updates the serial from a zone file */
+static int
+update_serial(char *serial) {
+	time_t now;
+	struct tm *tm;
+	int year, month, day, nb;
+
+	/* getting local time */
+	now = time(0);
+	tm  = gmtime(&now);
+
+	/* decoding current serial */
+	year =	  (serial[0] - '0') * 1000
+		+ (serial[1] - '0') *  100
+		+ (serial[2] - '0') *   10
+		+ (serial[3] - '0');
+	month =	  (serial[4] - '0') * 10
+		+ (serial[5] - '0');
+	day =	  (serial[6] - '0') * 10
+		+ (serial[7] - '0');
+	nb =	  (serial[8] - '0') * 10
+		+ (serial[9] - '0');
+
+	/* failing if serial is in the future */
+	if (year > tm->tm_year + 1900
+	|| (year == tm->tm_year + 1900 && month > tm->tm_mon + 1)
+	|| (year == tm->tm_year + 1900 && month == tm->tm_mon + 1
+					&& day > tm->tm_mday)
+	|| (year == tm->tm_year + 1900 && month == tm->tm_mon + 1
+					&& day == tm->tm_mday && nb >= 99))
+		return -1;
+
+	/* computing the new number */
+	if (year == tm->tm_year + 1900
+	&& month == tm->tm_mon + 1
+	&& day   == tm->tm_mday)
+		nb += 1;
+	else
+		nb = 1;
+
+	/* encoding the new serial */
+	serial[0] = '0' + (19 + tm->tm_year / 100) / 10;
+	serial[1] = '0' + (19 + tm->tm_year / 100) % 10;
+	serial[2] = '0' + (tm->tm_year % 100) / 10;
+	serial[3] = '0' + (tm->tm_year % 100) % 10;
+	serial[4] = '0' + (tm->tm_mon + 1) / 10;
+	serial[5] = '0' + (tm->tm_mon + 1) % 10;
+	serial[6] = '0' + tm->tm_mday / 10;
+	serial[7] = '0' + tm->tm_mday % 10;
+	serial[8] = '0' + nb / 10;
+	serial[9] = '0' + nb % 10;
+	return 0; }
+
+
+
 /* effector_one_zone • updates a single zone file */
 #define ZONE_BUF_UNIT	4096
 static int
@@ -102,6 +157,7 @@ effector_one_zone(const char *filename, const char *name, size_t nsize,
 						unsigned char addr[4]) {
 	char *data = 0;
 	size_t dsize = 0, asize = 0, ret, i, line, org, end, next;
+	size_t ser_b, ser_e;
 	FILE *f;
 	void *neo;
 	log_s_zone_update(filename, name, nsize, addr);
@@ -168,6 +224,25 @@ effector_one_zone(const char *filename, const char *name, size_t nsize,
 	if (!next && !addr[0] && !addr[1] && !addr[2] && !addr[3]) {
 		free(data);
 		return 0; }
+
+	/* looking for ten consecutive digits as a serial to update */
+	ser_e = ser_b = 0;
+	while (ser_e < dsize && ser_e - ser_b != 10) {
+		ser_b = ser_e;
+		while (ser_b < dsize
+		&& (data[ser_b] < '0' || data[ser_b] > '9'))
+			ser_b += 1;
+		ser_e = ser_b;
+		while (ser_e < dsize
+		&& (data[ser_e] >= '0' && data[ser_e] <= '9'))
+			ser_e += 1; }
+	if (ser_e - ser_b != 10) {
+		log_s_zone_no_serial(filename);
+		return -1; }
+	if (update_serial(data + ser_b) < 0) {
+		log_s_zone_future_serial(data + ser_b, filename);
+		return -1; }
+		
 
 	/* opening the zone file for writing */
 	f = fopen(filename, "wb");

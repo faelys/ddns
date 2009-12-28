@@ -256,6 +256,12 @@ void
 log_s_unsafe_forbidden(struct ddns_message *msg, const unsigned char *peer);
 
 void
+log_s_zone_future_serial(const char *serial, const char *filename);
+
+void
+log_s_zone_no_serial(const char *filename);
+
+void
 log_s_zone_open_r(const char *filename);
 
 void
