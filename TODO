@@ -1,8 +1,5 @@
 client:
   * better logging?
 
-examples:
-  * making and committing them
-
 README:
   * explaining internals?

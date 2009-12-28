@@ -1,0 +1,14 @@
+(listen 54321)
+(defaults
+	(effector
+		(system "echo " (name) " switched to address " (addr)))
+	(timeout 900)
+	(flags allow-unsafe))
+(account
+	(name tester)
+	(key #	DC2DCC8BB3D31412 C82BE020D33D1A89
+		1A747D51398924D3 BAC55A115AC2ACA5
+		46A295C824C21AE3 0882995972553123
+		1C969EEC23E64B4D EF522F1BEF556028 #)
+	(interval 70 10)
+	(timeout 10))
