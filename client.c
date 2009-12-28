@@ -23,11 +23,16 @@
 #include "utils.h"
 
 #include <netinet/in.h>
+#include <signal.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
+
+
+/* terminated • flag set upon SIGTERM reception */
+static int terminated = 0;
 
 
 /********************
@@ -204,7 +209,7 @@ client_loop(struct client_options *opt) {
 		get_own_addr(msg.addr, opt->sensor.nodes);
 		return send_message(fd, &msg, opt->key,  opt->ksize); }
 
-	for (;;) {
+	while (!terminated) {
 		msg.time = time(0);
 		get_own_addr(msg.addr, opt->sensor.nodes);
 		if (send_message(fd, &msg, opt->key, opt->ksize) < 0) return -1;
@@ -226,6 +231,13 @@ load_sx(struct sexp *sx, const char *filename) {
 	ret = sxp_file_to_sx(sx, in, 1024, 1024, 64);
 	fclose(in);
 	return ret; }
+
+
+/* sig_handler • handling SIGTERM to exit cleanly */
+static void
+sig_handler(int a) {
+	(void)a;
+	terminated = 1; }
 
 
 /* usage • prints the command line usage string */
@@ -286,11 +298,20 @@ main(int argc, char **argv) {
 	if (pidfilename && pidfile(pidfilename) < 0)
 		 return EXIT_FAILURE;
 
+	/* TERM signal catching */
+	if (opt.interval > 0) {
+		struct sigaction sa;
+		sa.sa_handler = sig_handler;
+		sigemptyset(&sa.sa_mask);
+		sa.sa_flags = 0;
+		sigaction(SIGTERM, &sa, 0); }
+
 	/* main loop */
 	if (client_loop(&opt) < 0)
 		 return EXIT_FAILURE;
 
 	if (pidfilename) unlink(pidfilename);
+	log_c_exiting();
 	return 0; }
 
 /* vim: set filetype=c: */
