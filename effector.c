@@ -53,12 +53,13 @@ effector_system(struct sx_node *sx, const char *name, size_t nsize,
 	for (s = sx; s; s = s->next)
 		if (SX_IS_ATOM(s)) csz += s->size;
 		else if (SX_CHILD(s) && SX_IS_ATOM(SX_CHILD(s))) {
-			if (!strcmp(SX_DATA(SX_CHILD(s)), "name")
-			||  !strcmp(SX_DATA(SX_CHILD(s)), "host")
-			||  !strcmp(SX_DATA(SX_CHILD(s)), "hostname"))
+			const char *scmd = SX_DATA(SX_CHILD(s));
+			if (!strcmp(scmd, "name")
+			||  !strcmp(scmd, "host")
+			||  !strcmp(scmd, "hostname"))
 				csz += nsize;
-			else if (!strcmp(SX_DATA(SX_CHILD(s)), "addr")
-			||  !strcmp(SX_DATA(SX_CHILD(s)), "address"))
+			else if (!strcmp(scmd, "addr")
+			||  !strcmp(scmd, "address"))
 				csz += asize; }
 
 	/* allocating command buffer */
