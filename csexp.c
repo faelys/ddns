@@ -16,6 +16,10 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "csexp.h"
 
 #include <assert.h>
@@ -71,6 +75,7 @@ sx_copy(struct sexp *sx, struct sx_node *root) {
 			else dst->data = 0; } } }
 
 
+#ifndef WITHOUT_SX_MUTABLE
 /* sxm_grow_data • realloc sexp.data if needed to fit the requested size */
 /*	returns 0 on succes, -1 on failure */
 /*	realloc() cannot be used here, because the old pointer can no longer
@@ -147,6 +152,7 @@ sxm_grow_nodes(struct sx_mutable *sxm, size_t addition) {
 	sxm->sx.nodes = neo;
 	sxm->nasize = needed;
 	return 0; }
+#endif /* ndef WITHOUT_SX_MUTABLE */
 
 
 
@@ -207,6 +213,8 @@ sx_release(struct sexp *sx) {
 /**********************************
  * MUTABLE S-EXPRESSION FUNCTIONS *
  **********************************/
+
+#ifndef WITHOUT_SX_MUTABLE
 
 /* sxm_add_atom • creates a new atom node with the given data */
 /*	returns the newly created node, or 0 on error */
@@ -302,6 +310,8 @@ sxm_release(struct sx_mutable *sxm, struct sexp *keep) {
 /*********************************
  * S-EXPRESSION PARSER FUNCTIONS *
  *********************************/
+
+#ifndef WITHOUT_SX_PARSER
 
 /****** PARSER STATES *****/
 
@@ -682,7 +692,7 @@ sxp_quoted(struct sx_parser *parser, const char *data, size_t size) {
 				if (sxp_grow_atom(parser, i - org) < 0)
 					return 0;
 				memcpy(parser->atom.data + parser->atom.size,
-						data, i - org);
+						data + org, i - org);
 				parser->atom.size += i - org; }
 			if (i >= size) return i;
 			if (data[i] == '"') break; /* end of atom */
@@ -912,5 +922,7 @@ sxp_release(struct sx_parser *parser, struct sx_mutable *keep_sxm,
 	parser->atom.size = parser->atom.asize = 0;
 	parser->stack.size = parser->stack.asize = 0; }
 
+#endif /* ndef WITHOUT_SX_PARSER */
+#endif /* ndef WITHOUT_SX_MUTABLE */
 
 /* vim: set filetype=c: */

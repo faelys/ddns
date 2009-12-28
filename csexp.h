@@ -16,6 +16,17 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+/*
+ ***** COMPILE-TIME KNOBS *****
+ *
+ * HAVE_CONFIG_H
+ *	includes "config.h" for further knobbing
+ * WITHOUT_SX_MUTABLE
+ *	disables mutable S-expression code. Implies WITHOUT_SX_PARSER
+ * WITHOUT_SX_PARSER
+ *	disables S-expression parser code.
+ */
+
 #ifndef LITHIUM_CSEXP_H
 #define LITHIUM_CSEXP_H
 
@@ -70,6 +81,7 @@ struct sexp {
 	size_t		 nsize; /* number of nodes in the array */
 };
 
+#ifndef WITHOUT_SX_MUTABLE
 /* sx_mutable • container for mutable S-expression */
 struct sx_mutable {
 	struct sexp	sx;	/* actual S-expression */
@@ -79,6 +91,7 @@ struct sx_mutable {
 	size_t		nunit;	/* sexp.nodes extension unit */
 };
 
+#ifndef WITHOUT_SX_PARSER
 /* sx_parser • S-expression parser data */
 struct sx_parser {
 	struct sx_mutable	 sxm;	/* S-expr in construction */
@@ -96,6 +109,8 @@ struct sx_parser {
 		size_t		 asize;
 	}			 stack;	/* stack of indices of opened lists */
 };
+#endif /* ndef WITHOUT_SX_PARSER */
+#endif /* ndef WITHOUT_SX_MUTABLE */
 
 
 
@@ -121,6 +136,8 @@ sx_release(struct sexp *sx);
 /**********************************
  * MUTABLE S-EXPRESSION FUNCTIONS *
  **********************************/
+
+#ifndef WITHOUT_SX_MUTABLE
 
 /* sxm_add_atom • creates a new atom node with the given data */
 /*	returns the newly created node, or 0 on error */
@@ -150,6 +167,8 @@ sxm_release(struct sx_mutable *sxm, struct sexp *keep);
 /*********************************
  * S-EXPRESSION PARSER FUNCTIONS *
  *********************************/
+
+#ifndef WITHOUT_SX_PARSER
 
 /* sxp_file_to_sx • reads a file into a temporary sx_parser and fills a sx */
 /*	returns 0 on succes, -1 on error */
@@ -186,6 +205,8 @@ sxp_readfile(struct sx_parser *parser, FILE *in, size_t bufsize);
 void
 sxp_release(struct sx_parser *parser, struct sx_mutable *keep_sxm,
 							struct sexp *keep_sx);
+#endif /* ndef WITHOUT_SX_PARSER */
+#endif /* ndef WITHOUT_SX_MUTABLE */
 
 #endif /* ndef LITHIUM_CSEXP_H */
 
