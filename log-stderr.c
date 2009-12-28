@@ -256,7 +256,7 @@ log_s_bad_account_flag(const char *flag) {
 	fprintf(stderr, "Unknown account flag \"%s\"\n",flag); }
 
 void
-log_s_bad_cmd(char *cmd) {
+log_s_bad_cmd(const char *cmd) {
 	fprintf(stderr, "Unknown server option \"%s\"\n", cmd); }
 
 void

@@ -268,7 +268,7 @@ log_s_bad_account_flag(const char *flag) {
 	syslog(LOG_WARNING, "Unknown account flag \"%s\"\n",flag); }
 
 void
-log_s_bad_cmd(char *cmd) {
+log_s_bad_cmd(const char *cmd) {
 	syslog(LOG_WARNING, "Unknown server option \"%s\"\n", cmd); }
 
 void

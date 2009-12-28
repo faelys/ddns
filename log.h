@@ -166,7 +166,7 @@ void
 log_s_bad_account_flag(const char *flag);
 
 void
-log_s_bad_cmd(char *cmd);
+log_s_bad_cmd(const char *cmd);
 
 void
 log_s_bad_config(void);
