@@ -83,10 +83,17 @@ parse_options(struct client_options *opt, struct sx_node *sx) {
 		else if (!strcmp(cmd, "server")) {
 			if (SX_IS_ATOM(arg)) {
 				free(nopt.host);
-				nopt.host = strdup(arg->data); }
+				nopt.host = malloc(arg->size + 1);
+				if (nopt.host) {
+					memcpy(nopt.host,arg->data,arg->size);
+					nopt.host[arg->size] = 0; } }
 			if (arg->next && SX_IS_ATOM(arg->next)) {
 				free(nopt.port);
-				nopt.port = strdup(arg->next->data); } }
+				nopt.port = malloc(arg->next->size + 1);
+				if (nopt.port) {
+					memcpy(nopt.port, arg->next->data,
+							arg->next->size);
+					nopt.port[arg->next->size] = 0; } } }
 		else if (!strcmp(cmd, "name")) {
 			if (!SX_IS_ATOM(arg) || !arg->size) continue;
 			neo = realloc(nopt.name, arg->size);
