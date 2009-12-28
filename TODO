@@ -10,8 +10,5 @@ log:
 message:
   * logging encoding and decoding failures
 
-server:
-  * common options for all accounts
-
 README:
   * explaining internals?

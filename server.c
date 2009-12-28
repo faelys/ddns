@@ -82,6 +82,31 @@ free_account(struct account *acc) {
 	sx_release(&acc->effector); }
 
 
+/* dup_account • initialization of an account by copying a source */
+static void
+dup_account(struct account *dst, struct account *src) {
+	memcpy(dst, src, sizeof *dst);
+	if (src->name) {
+		dst->name = malloc(src->nsize);
+		if (dst->name) {
+			memcpy(dst->name, src->name, src->nsize);
+			dst->nsize = src->nsize; }
+		else dst->nsize = 0; }
+	else {
+		dst->nsize = 0;
+		dst->name = 0; }
+	if (src->key) {
+		dst->key = malloc(src->ksize);
+		if (dst->key) {
+			memcpy(dst->key, src->key, src->ksize);
+			dst->ksize = src->ksize; }
+		else dst->ksize = 0; }
+	else {
+		dst->ksize = 0;
+		dst->key = 0; }
+	sx_dup(&dst->effector, src->effector.nodes); }
+
+
 /* data_cmp • comparison function checking size first, then contents */
 static int
 data_cmp(const char *data1, size_t len1, const char *data2, size_t len2) {
@@ -262,6 +287,7 @@ reload_options(struct server_options *opt) {
 	struct sexp sx;
 	struct sx_node *s;
 	struct server_options neo;
+	struct account defacc;
 	FILE *f;
 	time_t mt;
 	int i;
@@ -284,6 +310,7 @@ reload_options(struct server_options *opt) {
 		return 0; }
 
 	/* preloading the new options */
+	init_account(&defacc);
 	init_server_options(&neo);
 	neo.filename = opt->filename;
 	neo.mtime = opt->mtime;
@@ -300,7 +327,7 @@ reload_options(struct server_options *opt) {
 			add_listen_fd(&neo.fds, SX_CHILD(s)->next);
 		else if (!strcmp(SX_DATA(SX_CHILD(s)), "account")) {
 			struct account acc, *pacc;
-			init_account(&acc);
+			dup_account(&acc, &defacc);
 			parse_account(&acc, SX_CHILD(s)->next);
 			if (!acc.name || !acc.nsize
 			||  !acc.key  || !acc.ksize) {
@@ -309,6 +336,9 @@ reload_options(struct server_options *opt) {
 			pacc = arr_item(&neo.accounts,
 						arr_newitem(&neo.accounts));
 			*pacc = acc; }
+		else if (!strcmp(SX_DATA(SX_CHILD(s)), "default")
+		|| !strcmp(SX_DATA(SX_CHILD(s)), "defaults"))
+			parse_account(&defacc, SX_CHILD(s)->next);
 		else log_s_bad_cmd(SX_DATA(SX_CHILD(s)));
 
 	/* sanity checks */
