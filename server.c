@@ -285,9 +285,10 @@ add_listen_fd(struct array *poll_fds, struct sx_node *sx) {
 static int
 reload_options(struct server_options *opt) {
 	struct sexp sx;
-	struct sx_node *s;
+	struct sx_node *s, *arg;
 	struct server_options neo;
 	struct account defacc;
+	const char *cmd;
 	FILE *f;
 	time_t mt;
 	int i;
@@ -322,13 +323,16 @@ reload_options(struct server_options *opt) {
 
 	/* reading S-expression data */
 	for (s = sx.nodes; s; s = s->next)
-		if (!SX_CHILD(s) || !SX_CHILD(s)->next) continue;
-		else if (!strcmp(SX_DATA(SX_CHILD(s)), "listen"))
-			add_listen_fd(&neo.fds, SX_CHILD(s)->next);
-		else if (!strcmp(SX_DATA(SX_CHILD(s)), "account")) {
+		if (!SX_CHILD(s)
+		|| (cmd = SX_DATA(SX_CHILD(s))) == 0
+		|| (arg = SX_CHILD(s)->next) == 0)
+			continue;
+		else if (!strcmp(cmd, "listen"))
+			add_listen_fd(&neo.fds, arg);
+		else if (!strcmp(cmd, "account")) {
 			struct account acc, *pacc;
 			dup_account(&acc, &defacc);
-			parse_account(&acc, SX_CHILD(s)->next);
+			parse_account(&acc, arg);
 			if (!acc.name || !acc.nsize
 			||  !acc.key  || !acc.ksize) {
 				free_account(&acc);
@@ -336,10 +340,10 @@ reload_options(struct server_options *opt) {
 			pacc = arr_item(&neo.accounts,
 						arr_newitem(&neo.accounts));
 			*pacc = acc; }
-		else if (!strcmp(SX_DATA(SX_CHILD(s)), "default")
-		|| !strcmp(SX_DATA(SX_CHILD(s)), "defaults"))
-			parse_account(&defacc, SX_CHILD(s)->next);
-		else log_s_bad_cmd(SX_DATA(SX_CHILD(s)));
+		else if (!strcmp(cmd, "default")
+		|| !strcmp(cmd, "defaults"))
+			parse_account(&defacc, arg);
+		else log_s_bad_cmd(cmd);
 
 	/* sanity checks */
 	if (!neo.fds.size) {
