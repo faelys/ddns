@@ -51,7 +51,8 @@ sha1-test:	sha1-test.o sha1.o
 	$(CC) $(LDFLAGS) $(.ALLSRC) -o $(.TARGET)
 
 GNUmakefile:	BSDmakefile
-		sed	-e 's/^\(all:.*\) GNUmakefile/\1/' \
+		sed	-e 's/^\(all:.*\)GNUmakefile /\1/' \
+			-e 's/\(rm .*\)GNUmakefile /\1/' \
 			-e '/^GNUmakefile:/,/^$$/d' \
 			-e 's/\$$(\.ALLSRC)/$$^/g' \
 			-e 's/\$$(\.IMPSRC)/$$</g' \
@@ -65,7 +66,8 @@ GNUmakefile:	BSDmakefile
 clean:
 	rm -f *.o
 	rm -rf $(DEPDIR)
-	rm -f sha1-test ddns-client ddns-server
+	rm -f GNUmakefile sha1-test ddns-client ddns-server \
+		stderr-client stderr-server
 
 
 # dependencies

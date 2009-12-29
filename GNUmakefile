@@ -22,7 +22,7 @@ CC=gcc
 
 default:	ddns-client ddns-server
 
-all:		GNUmakefile sha1-test \
+all:		sha1-test \
 		ddns-client ddns-server \
 		stderr-client stderr-server
 
@@ -53,7 +53,8 @@ sha1-test:	sha1-test.o sha1.o
 clean:
 	rm -f *.o
 	rm -rf $(DEPDIR)
-	rm -f sha1-test ddns-client ddns-server
+	rm -f sha1-test ddns-client ddns-server \
+		stderr-client stderr-server
 
 
 # dependencies
