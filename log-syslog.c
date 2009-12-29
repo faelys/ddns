@@ -34,7 +34,7 @@
 
 void
 log_open(const char *name) {
-	openlog(name, LOG_PID, LOG_DAEMON); }
+	openlog(name, LOG_PID | LOG_NDELAY, LOG_DAEMON); }
 
 void
 log_close(void) {
