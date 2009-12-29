@@ -107,11 +107,11 @@ set_user_root(const char *root, const char *user) {
 
 	/* actual user and group id change */
 	if (user) {
-		if (setuid(pw->pw_uid) < 0) {
-			log_m_setuid(user);
-			return -1; }
 		if (setgid(pw->pw_gid) < 0) {
 			log_m_setgid(user);
+			return -1; }
+		if (setuid(pw->pw_uid) < 0) {
+			log_m_setuid(user);
 			return -1; } }
 	return 0; }
 
