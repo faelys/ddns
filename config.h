@@ -20,7 +20,7 @@
 
 /* seemingly required for GNU libc compatibility */
 #define _BSD_SOURCE
-#define _POSIX_C_SOURCE	200112L
+#define _XOPEN_SOURCE
 
 #endif /* ndef DDNS_CONFIG_H */
 
