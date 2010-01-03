@@ -53,10 +53,11 @@ struct client_options {
 	size_t		 ksize;
 	int		 interval;
 	int		 resolv_interval;
+	int		 resolv_retry;
 	struct sexp	 sensor; };
 
 /* DEFAULT_OPT • initializer for struct client_options */
-#define DEFAULT_OPT { 0, 0, 0, 0, 0, 0, 0, -1, { 0, 0, 0, 0 } }
+#define DEFAULT_OPT { 0, 0, 0, 0, 0, 0, 0, -1, 0, { 0, 0, 0, 0 } }
 
 
 /* free_options • releases internal memory from struct client_options */
@@ -121,6 +122,10 @@ parse_options(struct client_options *opt, struct sx_node *sx) {
 		|| !strcmp(cmd, "resolv_interval")) {
 			if (SX_IS_ATOM(arg) && arg->size)
 				nopt.resolv_interval = atoi(arg->data); }
+		else if (!strcmp(cmd, "resolv-retry")
+		|| !strcmp(cmd, "resolv_retry")) {
+			if (SX_IS_ATOM(arg) && arg->size)
+				nopt.resolv_retry = atoi(arg->data); }
 		else if (!strcmp(cmd, "sensor")) {
 			sx_release(&nopt.sensor);
 			sx_dup(&nopt.sensor, arg); }
@@ -152,7 +157,6 @@ connect_socket(int socket, struct client_options *opt) {
 	struct addrinfo hints, *res;
 	int ret;
 
-fprintf(stderr, "Connecting socket %d\n", socket);
 	/* address lookup */
 	memset(&hints, 0, sizeof hints);
 	hints.ai_family = AF_INET;
@@ -223,19 +227,22 @@ client_loop(struct client_options *opt) {
 
 	while (!terminated) {
 		msg.time = time(0);
-		if (opt->interval <= 0) terminated = 1;
 
 		/* resolving server name if needed */
 		if (!last_resolv
 		|| (opt->resolv_interval >= 0
 		&& msg.time - last_resolv > opt->resolv_interval)) {
 			if (connect_socket(fd, opt) >= 0)
-				last_resolv = msg.time; }
+				last_resolv = msg.time;
+			else if (opt->resolv_retry > 0) {
+				sleep(opt->resolv_retry);
+				continue; }
+			else return -1; }
 
-		/* sending the message (if possible) */
-		if (!last_resolv) continue;
+		/* sending the message */
 		get_own_addr(msg.addr, opt->sensor.nodes);
 		send_message(fd, &msg, opt->key, opt->ksize);
+		if (opt->interval <= 0) break;
 		sleep(opt->interval); }
 
 	return 0; }

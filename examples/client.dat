@@ -1,6 +1,7 @@
 (server localhost 54321)
 (interval 5)
 (resolv-interval 0)
+(resolv-retry 7)
 (sensor
 	(system "echo 127.0.0.1"))
 (name tester)
