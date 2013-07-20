@@ -1,8 +1,3 @@
-
-
-
-
-
 Introduction
 ------------
 
@@ -25,10 +20,10 @@ The problem is to have a DNS record clientname.mydomain.example on the
 server, pointing to the client's current public IP address.
 
 The usual tool for remote DNS updates is nsupdate, however I am not
-satisfied with i, mainly because of two issues :
+satisfied with it, mainly because of two issues:
 
  * the client can change anything in the DNS zone, not only its own record,
- * the client has to somehow find out its own IP address before updating
+ * the client has to somehow find out its own IP address before updating.
 
 There used to be a third point in that I do not like pre-shared secrets,
 especially in a protocol involving public-key cryptography (both the server
@@ -46,22 +41,23 @@ or other client's zones can not be reached. That is still to heavy and not
 secure enough for my taste.
 
 The second issue has to be worked around either by reverse-engineering a
-part of the NAT routr to extract its public IP address, or by asking some
+part of the NAT router to extract its public IP address, or by asking some
 box on the internet. That seems to be the purpose of
 http://checkip.dyndns.org/
 
 So at first I thought about adding a similar page to the web server on my
-DNS box. Then I imagined what would be going on : the client asking its
+DNS box. Then I imagined what would be going on: the client asking its
 public IP address to the server, and then handing back the address to the
 same server for DNS update. That sounds like a waste of resources, why not
 simply having the client send a message to the server, and the server using
 the remote address embedded in the message to update the DNS record?
 
-That is how this project began : writing a client sending messages once in
+That is how this project began: writing a client sending messages once in
 a while, and a server listening to this message and updating the records
 accordingly, maybe through a nsupdate call. This way there is no need for
-the client to find out its public IP, it involves only a single packet per
-update, and the client cannot update anything besides its own A record.
+the client to find out its public IP address, it involves only a single
+packet per update, and the client cannot update anything besides its own
+A record.
 
 That is exactly what this project does, when operating in "unsafe" mode. It
 is unsafe because no matter what kind of message you craft, if the client
