@@ -267,7 +267,7 @@ parr_remove(struct parray *arr, int idx) {
 	return ret; }
 
 
-/* parr_sorted_find • O(n log n) search in a sorted array, returning entry */
+/* parr_sorted_find • O(log n) search in a sorted array, returning entry */
 void *
 parr_sorted_find(struct parray *arr, void *key, array_cmp_fn cmp) {
 	int mi, ma, cu, ret;
@@ -283,7 +283,7 @@ parr_sorted_find(struct parray *arr, void *key, array_cmp_fn cmp) {
 	return 0; }
 
 
-/* parr_sorted_find_i • O(n log n) search in a sorted array,
+/* parr_sorted_find_i • O(log n) search in a sorted array,
  *      returning index of the smallest element larger than the key */
 int
 parr_sorted_find_i(struct parray *arr, void *key, array_cmp_fn cmp) {
