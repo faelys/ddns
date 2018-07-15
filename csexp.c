@@ -145,7 +145,8 @@ sxm_grow_nodes(struct sx_mutable *sxm, size_t addition) {
 		else	neo[i].data = neo
 				+ ((struct sx_node *)sxm->sx.nodes[i].data
 				- sxm->sx.nodes);
-		neo[i].next = neo + (sxm->sx.nodes[i].next - sxm->sx.nodes); }
+		neo[i].next = sxm->sx.nodes[i].next == 0 ? 0
+			: neo + (sxm->sx.nodes[i].next - sxm->sx.nodes); }
 
 	/* release of the old buffer  and update of structures */
 	free(sxm->sx.nodes);
