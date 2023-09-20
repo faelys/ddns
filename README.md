@@ -6,6 +6,10 @@ a long while. However it is not dead in that I still care about it and
 would handle bug reports usually in a matter of days, or at worst within
 a few weeks.
 
+As of 2023, I still use this daemon daily for dynamic DNS update and
+low-priority monitoring, and it has been working well for me for more than
+a decade.
+
 The reference repository is based on [fossil][] and available at
 <http://fossil.instinctive.eu/ddns>.
 
